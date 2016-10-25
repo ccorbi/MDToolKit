@@ -1,0 +1,450 @@
+# This script counts water molecules which is binded with more than one other residue (i.e. functions like a bridge) within selection for all the frames of trajectory and records results as separate text files corresponding to the files in the filelist
+# Andriy Anishkin (anishkin@icqmail.com) UMCP
+
+
+#Open file and load part of DCD trajectory
+# mol new c16-ceramide-4r14c_popc_hex_salt_cor.psf type psf
+# mol new {/Temp/ceramide/c16-ceramide-4r14c_popc_hex_salt_cor.psf} type psf
+mol new {/Temp/ceramide/c16-ceramide-6r14c_popc_hex_salt_cor.psf} type psf
+mol off top
+set output_frame_offset 0
+set first_frame 0
+set last_frame -1
+# set last_frame 249
+# set filelist {/Temp/ceramide/sim_10.0_c16-ceramide-6r14c_popc_hex_salt_cor-3.dcd}
+# set filelist {
+# 	D:/Summary/sim_0.0to5.0-1of10_c16-ceramide-4r14c_popc_hex_salt_cor.dcd
+# 	D:/Summary/sim_5.0to10.0-1of10_c16-ceramide-4r14c_popc_hex_salt_cor.dcd
+# }
+# set filelist {
+# 	D:/Summary/heatrs_0.0to2.0-1of10_c16-ceramide-4r14c_popc_hex_salt_cor.dcd
+# 	D:/Summary/minnchd_1of10_c16-ceramide-4r14c_popc_hex_salt_cor.dcd
+# 	D:/Summary/sim_0.0to5.0-1of10_c16-ceramide-4r14c_popc_hex_salt_cor.dcd
+# 	D:/Summary/sim_5.0to10.0-1of10_c16-ceramide-4r14c_popc_hex_salt_cor.dcd
+# }
+set filelist {
+	D:/Summary/heatrs_0.0to2.0-1of10_c16-ceramide-6r14c_popc_hex_salt_cor.dcd
+	D:/Summary/minnchd_1of10_c16-ceramide-6r14c_popc_hex_salt_cor.dcd
+	D:/Summary/sim_0.0to5.0-1of10_c16-ceramide-6r14c_popc_hex_salt_cor.dcd
+	D:/Summary/sim_5.0to10.0-1of10_c16-ceramide-6r14c_popc_hex_salt_cor.dcd
+}
+# set outputPath {};	# Output path for results files. If it is empty, output is written to the same location as an input file
+set outputPath {/Temp/ceramide}
+
+
+#Set selection to look for atoms
+set selection1 [atomselect top "resname C16 and name HO1 HO3 HN O1 O3 O21 N2"]
+set selection2 [atomselect top "water"]
+
+#Set H-bond definition criteria
+set cutoff 3.51
+set angle 30.1
+
+
+#set filelist {test_wtr.dcd}
+
+foreach crnt_file $filelist {
+#load file
+animate read dcd $crnt_file beg $first_frame end $last_frame waitfor all
+
+
+
+	#Extract frames from file
+	set num_steps [molinfo top get numframes]
+
+	#Open files for writing
+	if {[llength  $outputPath]>0} {;	# Writing results to another location that input files (for files reading from CD
+		# Reverse slashes if necessary
+		regsub -all {\\} $outputPath {/} outputPath
+		set outputPath [string trim $outputPath]
+		# Check if the directory name includes slash at the end
+		if {[string compare [string index $outputPath end] {/}]!=0} {
+			set outputPath "[set outputPath]/"
+		}
+		set filename1 "$outputPath[file tail $crnt_file].hbd_bridges.txt"
+	} else {;	# Writing results to the same location that input files (for files reading from CD
+		set filename1 $crnt_file.hbd_bridges.txt
+	}
+	set fid1 [open $filename1 w]
+	set fid1Log [open $filename1.log w]
+	
+# 	puts $fid1Log "Coordinates from file $crnt_file read"
+
+	# Create file header
+	puts $fid1 "frame_write\twater_donors\twater_acceptors\twater_hBonds\twater_1hBonds\twater_2hBonds\twater_3hBonds\twater_4hBonds\twater_m4hBonds\twater_avghBonds\tself_hBridges\tinter_hBridges\tinter_1hBridges\tinter_2hBridges\tinter_3hBridges\tinter_4hBridges\tinter_m4hBridges\tinter_avghBridges\tinter_dahBonds\tinter_ddhBonds\tinter_aahBonds"
+# 	puts $fid1Log "Output file $filename1 initiated"
+	
+	set ceramideMoleculesNumber [llength [lsort -integer -unique [$selection1 get residue]]]
+	for {set frame 0} {$frame < $num_steps} {incr frame} {
+		#Update the frames
+		$selection1 frame $frame
+		$selection1 update
+		$selection2 frame $frame
+		$selection2 update
+		
+		#Count H-bonds in selection
+		set ceramide_water_hBonds [measure hBonds $cutoff $angle $selection1 $selection2]
+		set water_ceramide_hBonds [measure hBonds $cutoff $angle $selection2 $selection1]
+# 		puts $fid1Log "H-bonds measured for frame $frame"
+		
+		set ceramide_water_hBonds_full {}
+		foreach donor [lindex $ceramide_water_hBonds 0] acceptor [lindex $ceramide_water_hBonds 1] {
+			# Transform the orignal hBonds output into stuctured list. Each record - "resdue of water" "resdue of ceramide" "water donor or acceptor"
+			set sel [atomselect top "index $donor"]
+			set donorResidue [$sel get residue]
+			$sel delete
+			
+			set sel [atomselect top "index $acceptor"]
+			set acceptorResidue [$sel get residue]
+			$sel delete
+			
+			lappend ceramide_water_hBonds_full "$acceptorResidue $donorResidue a"
+		}
+		set ceramide_water_hBonds_full [lsort -integer -index 0 $ceramide_water_hBonds_full]
+# 		puts $fid1Log "_________________ ceramide_water_hBonds_full $ceramide_water_hBonds_full"
+		
+		set water_ceramide_hBonds_full {}
+		foreach donor [lindex $water_ceramide_hBonds 0] acceptor [lindex $water_ceramide_hBonds 1] {
+			# Transform the orignal hBonds output into stuctured list. Each record - "resdue of water" "resdue of ceramide" "water donor or acceptor"
+			set sel [atomselect top "index $donor"]
+			set donorResidue [$sel get residue]
+			$sel delete
+			
+			set sel [atomselect top "index $acceptor"]
+			set acceptorResidue [$sel get residue]
+			$sel delete
+			
+			lappend water_ceramide_hBonds_full "$donorResidue $acceptorResidue d"
+		}
+		set water_ceramide_hBonds_full [lsort -integer -index 0 $water_ceramide_hBonds_full]
+# 		puts $fid1Log "_________________ water_ceramide_hBonds_full $water_ceramide_hBonds_full"
+		
+		set all_hBonds [lsort -integer -index 0 [concat $ceramide_water_hBonds_full $water_ceramide_hBonds_full]];   # Array with All the hydrogen bonds water makes with ceramde
+# 		puts $fid1Log "An array with all the H-bonds created for frame $frame"
+		
+		set frame_write [format "%04d" [expr {$frame + $output_frame_offset}]];   #compose frame number to write to the file
+		set water_donors [llength $water_ceramide_hBonds_full];   # Number of hydrogen bonds in which water was a donor
+		set water_acceptors [llength $ceramide_water_hBonds_full];   # Number of hydrogen bonds in which water was an acceptor
+		set water_hBonds [expr {$water_donors+$water_acceptors}];   # Number of All the hydrogen bonds water makes with ceramde
+		set all_hBonds_number [llength [lsort -unique -integer -index 0 $all_hBonds]]
+		set water_avghBonds [expr {($all_hBonds_number>0?(double($water_hBonds)/$all_hBonds_number):0)}];   # An average number of hydrogen bonds with ceramide among the molecules h-bonding with it
+
+		#Cycle through all the water molecules, compare each water molecule with the previous one
+		set water_1hBonds 0;   # Number water molecules making exactly 1 hydrogen bond with ceramde
+		set water_2hBonds 0;   # Number water molecules making exactly 2 hydrogen bonds with ceramde
+		set water_3hBonds 0;   # Number water molecules making exactly 3 hydrogen bonds with ceramde
+		set water_4hBonds 0;   # Number water molecules making exactly 4 hydrogen bonds with ceramde
+		set water_m4hBonds 0;   # Number water molecules making more than 4 hydrogen bonds with ceramde
+
+		set self_hBridges 0;	# Number of water molecules making hBridge within the same ceramide molecule
+		set inter_hBridges 0;   # Number of water molecules making hBridge between different ceramide molecules
+		
+		set ceramidePairsList {};	# List of all hBridged ceramide pairs
+		set inter_1hBridges 0;   # Number of ceramide molecules, linked by one hBridge
+		set inter_2hBridges 0;   # Number of ceramide molecules, linked by two hBridges
+		set inter_3hBridges 0;   # Number of ceramide molecules, linked by three hBridges
+		set inter_4hBridges 0;   # Number of ceramide molecules, linked by four hBridges
+		set inter_m4hBridges 0;   # Number of ceramide molecules, linked by more than four hBridges
+		set inter_dahBonds 0;   # Number of hBridges when water molecule acts as a donor in one bond and an acceptor in other
+		set inter_ddhBonds 0;   # Number of hBridges when water molecule acts as a donor in both of them
+		set inter_aahBonds 0;   # Number of hBridges when water molecule acts as an acceptor in both of them
+
+		set waterResidueOld [lindex [lindex $all_hBonds 0] 0];   # Residue number of the old water molecule
+		set ceramideResidueOld [lindex [lindex $all_hBonds 0] 1];   # Residue number of the old ceramide molecule. For water molecules binding with multiple ceramide residues this can be the list
+		set donorOld [lindex [lindex $all_hBonds 0] 2];   # List of donors of hBonds for this water molecule
+		set hBondsOld 1;   # Number of hBonds for the old water molecule
+		
+# 		puts $fid1Log "Cycle throgh H-bonds for the frame $frame started"
+		for {set b 1} {$b < $water_hBonds} {incr b} {;   #Cycle through all the water molecules
+			set currenthBond [lindex $all_hBonds $b]
+			set waterResidueNew [lindex $currenthBond 0]
+			if {($waterResidueNew!=$waterResidueOld)} {;   # New hBond is from new water molecule
+				# Switch by the number of hBonds for the water molecule
+				case $hBondsOld {
+					1 {;   # exactly 1 hydrogen bond with ceramde
+						incr water_1hBonds;   # Number water molecules making exactly 1 hydrogen bond with ceramde
+					}
+					2 {;   # exactly 2 hydrogen bonds with ceramde
+						incr water_2hBonds;   # Number water molecules making exactly 2 hydrogen bonds with ceramde
+						if {[lindex $ceramideResidueOld 0]==[lindex $ceramideResidueOld 1]} {;	# Intramolecule hBridge
+							incr self_hBridges;	# Number of water molecules making hBridge within the same ceramide molecule
+						} else {;	# Intermolecule hBridge
+							incr inter_hBridges;   # Number of water molecules making hBridge between different ceramide molecules
+						};	# Intramolecule hBridge
+						
+					}
+					3 {;   # exactly 3 hydrogen bonds with ceramde
+						incr water_3hBonds;   # Number water molecules making exactly 3 hydrogen bonds with ceramde
+						# Number of unique ceramide residues hBonding with this water
+						case [llength [lsort -integer -unique $ceramideResidueOld]] {
+							1 {;	# All the hBonds to the same ceramide
+								incr self_hBridges;	# Number of water molecules making hBridge within the same ceramide molecule
+							}
+							2 {;	# 2 hBonds to the same ceramide
+								incr self_hBridges;	# Number of water molecules making hBridge within the same ceramide molecule
+								incr inter_hBridges;   # Number of water molecules making hBridge between different ceramide molecules
+							}
+							3 {;	# All the hBonds to different ceramides
+								incr inter_hBridges 3;   # Number of water molecules making hBridge between different ceramide molecules
+							}
+						}
+					}
+					4 {;   # exactly 4 hydrogen bonds with ceramde
+						incr water_4hBonds;   # Number water molecules making exactly 4 hydrogen bonds with ceramde
+						# Number of unique ceramide residues hBonding with this water
+						case [llength [lsort -integer -unique $ceramideResidueOld]] {
+							1 {;	# All the hBonds to the same ceramide
+								incr self_hBridges 2;	# Number of water molecules making hBridge within the same ceramide molecule
+							}
+							2 {;	# suggest 2 hBonds to one ceramide and 2 H-bonds to another
+								incr self_hBridges 2;	# Number of water molecules making hBridge within the same ceramide molecule
+								incr inter_hBridges 2;   # Number of water molecules making hBridge between different ceramide molecules
+							}
+							3 {;	# 2 Hbonds to the same ceramide, and 2 to 2 different
+								incr self_hBridges;	# Number of water molecules making hBridge within the same ceramide molecule
+								incr inter_hBridges 3;   # Number of water molecules making hBridge between different ceramide molecules
+							}
+							4 {;	# All the hBonds to different ceramides
+								incr inter_hBridges 4;   # Number of water molecules making hBridge between different ceramide molecules
+							}
+						}
+					}
+					default {;   # more than 4 hydrogen bonds with ceramde
+						incr water_m4hBonds;   # Number water molecules making more than 4 hydrogen bonds with ceramde
+					}
+				};   # Switch by the number of hBonds for the water molecule
+				
+				if {$hBondsOld > 1} {;   # There are some hBridged ceramides
+# 					if {[llength $ceramideResidueOld]==2} {
+# 						lappend ceramidePairsList "$ceramideResidueOld $i] [lindex $ceramideResidueOld $ii]";   # List of hBridged ceramide pairs
+# 					}
+# 					puts $fid1Log "ceramideResidueOld $ceramideResidueOld"
+					for {set i 0} {$i < [llength $ceramideResidueOld]} {incr i} {;   # Cycle throug the ceramides  	
+						for {set ii 0} {$ii < [llength $ceramideResidueOld]} {incr ii} {;   # Cycle through all the ceramides linked through this water molecule
+							lappend ceramidePairsList "[lindex $ceramideResidueOld $i] [lindex $ceramideResidueOld $ii]";   # List of hBridged ceramide pairs
+						}
+					};   # Cycle throug the ceramides  	
+# 					puts $fid1Log "ceramidePairsList $irsList"
+					for {set i 1} {$i < [llength $ceramideResidueOld]} {incr i} {;   # Cycle throug the ceramides and append all possible pairs to the list of ceramide pairs
+						for {set ii 0} {$ii < $i} {incr ii} {;   # Cycle through all the ceramides linked through this water molecule, numbers from 0 up to the current in the outer cycle
+							switch [join [lsort "[lindex $donorOld $ii][lindex $donorOld $i]"] ""] {
+								"aa" {
+									incr inter_aahBonds; # Number of hBridges when water molecule acts as an acceptor in both of them
+								}
+								"ad" {
+									incr inter_dahBonds;   # Number of hBridges when water molecule acts as a donor in one bond and an acceptor in other
+								}
+								"dd" {
+									incr inter_ddhBonds;   # Number of hBridges when water molecule acts as a donor in both of them
+								}
+							}
+						}
+					}
+				};   # There are some hBridged ceramides
+				
+			
+				set waterResidueOld [lindex $currenthBond 0];   # Residue number of the old water molecule
+				set ceramideResidueOld [lindex $currenthBond 1];   # Residue number of the old ceramide molecule. For water molecules binding with multiple ceramide residues this can be the list
+				set donorOld [lindex $currenthBond 2];   # List of donors of hBonds for this water molecule
+				set hBondsOld 1;   # Number of hBonds for the old water molecule
+			} else {;  # New hBond is from the same water molecule as the previous bond
+				lappend ceramideResidueOld [lindex $currenthBond 1];   # Residue number of the old ceramide molecule. For water molecules binding with multiple ceramide residues this can be the list
+				lappend donorOld [lindex $currenthBond 2];   # List of donors of hBonds for this water molecule 
+				incr hBondsOld;   # Number of hBonds for the old water molecule 
+			};   # New hBond is from new water molecule 
+			
+# 			puts "$b ----- $currenthBond ---- $water_1hBonds $water_2hBonds"
+		};   #Cycle through all the water molecules
+		# This is the analysis for the last water molecule
+#  		puts $fid1Log "The last water molecule"
+		# Switch by the number of hBonds for the water molecule
+		case $hBondsOld {
+			1 {;   # exactly 1 hydrogen bond with ceramde
+				incr water_1hBonds;   # Number water molecules making exactly 1 hydrogen bond with ceramde
+			}
+			2 {;   # exactly 2 hydrogen bonds with ceramde
+				incr water_2hBonds;   # Number water molecules making exactly 2 hydrogen bonds with ceramde
+				if {[lindex $ceramideResidueOld 0]==[lindex $ceramideResidueOld 1]} {;	# Intramolecule hBridge
+					incr self_hBridges;	# Number of water molecules making hBridge within the same ceramide molecule
+				} else {;	# Intermolecule hBridge
+					incr inter_hBridges;   # Number of water molecules making hBridge between different ceramide molecules
+				};	# Intramolecule hBridge
+				
+			}
+			3 {;   # exactly 3 hydrogen bonds with ceramde
+				incr water_3hBonds;   # Number water molecules making exactly 3 hydrogen bonds with ceramde
+				# Number of unique ceramide residues hBonding with this water
+				case [llength [lsort -integer -unique $ceramideResidueOld]] {
+					1 {;	# All the hBonds to the same ceramide
+						incr self_hBridges;	# Number of water molecules making hBridge within the same ceramide molecule
+					}
+					2 {;	# 2 hBonds to the same ceramide
+						incr self_hBridges;	# Number of water molecules making hBridge within the same ceramide molecule
+						incr inter_hBridges;   # Number of water molecules making hBridge between different ceramide molecules
+					}
+					3 {;	# All the hBonds to different ceramides
+						incr inter_hBridges 3;   # Number of water molecules making hBridge between different ceramide molecules
+					}
+				}
+			}
+			4 {;   # exactly 4 hydrogen bonds with ceramde
+				incr water_4hBonds;   # Number water molecules making exactly 4 hydrogen bonds with ceramde
+				# Number of unique ceramide residues hBonding with this water
+				case [llength [lsort -integer -unique $ceramideResidueOld]] {
+					1 {;	# All the hBonds to the same ceramide
+						incr self_hBridges 2;	# Number of water molecules making hBridge within the same ceramide molecule
+					}
+					2 {;	# suggest 2 hBonds to one ceramide and 2 H-bonds to another
+						incr self_hBridges 2;	# Number of water molecules making hBridge within the same ceramide molecule
+						incr inter_hBridges 2;   # Number of water molecules making hBridge between different ceramide molecules
+					}
+					3 {;	# 2 Hbonds to the same ceramide, and 2 to 2 different
+						incr self_hBridges;	# Number of water molecules making hBridge within the same ceramide molecule
+						incr inter_hBridges 3;   # Number of water molecules making hBridge between different ceramide molecules
+					}
+					4 {;	# All the hBonds to different ceramides
+						incr inter_hBridges 4;   # Number of water molecules making hBridge between different ceramide molecules
+					}
+				}
+			}
+			default {;   # more than 4 hydrogen bonds with ceramde
+				incr water_m4hBonds;   # Number water molecules making more than 4 hydrogen bonds with ceramde
+			}
+		};   # Switch by the number of hBonds for the water molecule
+		
+		if {$hBondsOld > 1} {;   # There are some hBridged ceramides
+# 					if {[llength $ceramideResidueOld]==2} {
+# 						lappend ceramidePairsList "$ceramideResidueOld $i] [lindex $ceramideResidueOld $ii]";   # List of hBridged ceramide pairs
+# 					}
+# 			puts $fid1Log "ceramideResidueOld $ceramideResidueOld"
+			for {set i 0} {$i < [llength $ceramideResidueOld]} {incr i} {;   # Cycle throug the ceramides  	
+				for {set ii 0} {$ii < [llength $ceramideResidueOld]} {incr ii} {;   # Cycle through all the ceramides linked through this water molecule
+					lappend ceramidePairsList "[lindex $ceramideResidueOld $i] [lindex $ceramideResidueOld $ii]";   # List of hBridged ceramide pairs
+				}
+			};   # Cycle throug the ceramides  	
+# 			puts $fid1Log "ceramidePairsList $ceramidePairsList"
+			for {set i 1} {$i < [llength $ceramideResidueOld]} {incr i} {;   # Cycle throug the ceramides and append all possible pairs to the list of ceramide pairs
+				for {set ii 0} {$ii < $i} {incr ii} {;   # Cycle through all the ceramides linked through this water molecule, numbers from 0 up to the current in the outer cycle
+					switch [join [lsort "[lindex $donorOld $ii][lindex $donorOld $i]"] ""] {
+						"aa" {
+							incr inter_aahBonds; # Number of hBridges when water molecule acts as an acceptor in both of them
+						}
+						"ad" {
+							incr inter_dahBonds;   # Number of hBridges when water molecule acts as a donor in one bond and an acceptor in other
+						}
+						"dd" {
+							incr inter_ddhBonds;   # Number of hBridges when water molecule acts as a donor in both of them
+						}
+					}
+				}
+			}
+		};   # There are some hBridged ceramides
+			
+
+				
+				
+				
+				
+						
+		set ceramidePairsList [lsort -integer -index 1 $ceramidePairsList]
+		set ceramidePairsList [lsort -integer -index 0 $ceramidePairsList]
+		set ceramideResidueOld [lindex [lindex $ceramidePairsList 0] 0];   # Residue number of the old ceramide molecule
+		if {$ceramideResidueOld!=[lindex [lindex $ceramidePairsList 0] 1]} {;   # This is intermolecule bridge
+			set hBridgesOld 1;   # Number of hBridges for the old ceramide molecule 
+		} else {;   # Intramolecule bridge
+			set hBridgesOld 0;   # Number of hBridges for the old ceramide molecule 
+		}
+		set hBridgesNumber [llength $ceramidePairsList];	# Total number of water bridges - both intramolecule and intermolecule
+# 		puts $fid1Log "Cycle through the interceramide bridges for frame $frame"
+# 		puts $fid1Log "$ceramidePairsList"
+
+		for {set b 1} {$b < $hBridgesNumber} {incr b} {;   #Cycle through all ceramide bridges
+			set currenthBridge [lindex $ceramidePairsList $b]
+# 			puts $fid1Log "hBridgesOld $hBridgesOld;  ceramideResidueOld $ceramideResidueOld; inter_1hBridges $inter_1hBridges; inter_2hBridges $inter_2hBridges; inter_31hBridges $inter_3hBridges; inter_4hBridges $inter_4hBridges; inter_m4hBridges $inter_m4hBridges"
+# 			puts $fid1Log "currenthBridge $currenthBridge"
+			set ceramideResidueNew [lindex $currenthBridge 0]
+			if {($ceramideResidueNew!=$ceramideResidueOld)} {;   # New hBridge is from new ceramide molecule
+				# Switch by the number of hBridges for the ceramide molecule
+				case $hBridgesOld {
+					0 {}
+					{1 2 3 4} {;   # 1,2,3 or 4 bridges
+						incr inter_[set hBridgesOld]hBridges;   # Number of ceramide molecules, linked by one or two hBridges
+					}
+					default {;   # more than 4 hydrogen bridges with other ceramide
+						incr inter_m4hBridges;   # Number of ceramide molecules, linked by more than two hBridges
+					}
+				};   # Switch by the number of hBridges for the old ceramide molecule
+				
+				set ceramideResidueOld $ceramideResidueNew;   # Residue number of the old ceramide molecule. For water molecules binding with multiple ceramide residues this can be the list
+				if {$ceramideResidueOld!=[lindex $currenthBridge 1]} {;   # This is intermolecule bridge
+					set hBridgesOld 1;   # Number of hBridges for the old ceramide molecule 
+				} else {;   # Intramolecule bridge
+					set hBridgesOld 0;   # Number of hBridges for the old ceramide molecule 
+				}
+			} else {;  # New hBridge is from the same ceramide molecule as the previous bridge
+				if {$ceramideResidueOld!=[lindex $currenthBridge 1]} {;   # This is intermolecule bridge
+					incr hBridgesOld;   # Number of hBridges for the old ceramide molecule
+				}
+			};   # New hBridge is from new ceramide molecule 
+		};   #Cycle through all the ceramide bridges
+		# This is the analysis for the last ceramide bridge
+		set currenthBridge [lindex $ceramidePairsList $b]
+		set ceramideResidueNew [lindex $currenthBridge 0]
+		if {($ceramideResidueNew!=$ceramideResidueOld)} {;   # New hBridge is from new ceramide molecule
+			# Switch by the number of hBridges for the ceramide molecule
+			case $hBridgesOld {
+				0 {}
+				{1 2 3 4} {;   # 1,2,3 or 4 bridges
+					incr inter_[set hBridgesOld]hBridges;   # Number of ceramide molecules, linked by one or two hBridges
+				}
+				default {;   # more than 4 hydrogen bridges with other ceramide
+					incr inter_m4hBridges;   # Number of ceramide molecules, linked by more than two hBridges
+				}
+			};   # Switch by the number of hBridges for the old ceramide molecule
+			
+			set ceramideResidueOld [lindex $currenthBridge 0];   # Residue number of the old ceramide molecule. For water molecules binding with multiple ceramide residues this can be the list
+			if {$ceramideResidueOld!=[lindex [lindex $ceramidePairsList $b] 1]} {;   # This is intermolecule bridge
+				set hBridgesOld 1;   # Number of hBridges for the old ceramide molecule 
+			} else {;   # Intramolecule bridge
+				set hBridgesOld 0;   # Number of hBridges for the old ceramide molecule 
+			}
+		} else {;  # New hBridge is with the same ceramide molecule as the previous bridge
+			if {$ceramideResidueOld!=[lindex [lindex $ceramidePairsList $b] 1]} {;   # This is intermolecule bridge
+				incr hBridgesOld;   # Number of hBridges for the old ceramide molecule
+			}
+		};   # New hBridge is from new ceramide molecule 
+		
+		set inter_1hBridges [expr {$inter_1hBridges/2.0}];   # Number of ceramide molecules, linked by one hBridge
+		set inter_2hBridges [expr {$inter_2hBridges/2.0}];   # Number of ceramide molecules, linked by two hBridges
+		set inter_3hBridges [expr {$inter_3hBridges/2.0}];   # Number of ceramide molecules, linked by three hBridges
+		set inter_4hBridges [expr {$inter_4hBridges/2.0}];   # Number of ceramide molecules, linked by four hBridges
+		set inter_m4hBridges [expr {$inter_m4hBridges/2.0}];   # Number of ceramide molecules, linked by more than four hBridges
+			
+		set inter_avghBridges [expr {double($inter_hBridges)/$ceramideMoleculesNumber}];   # An average number of hBridges per ceramide molecule
+			
+		#Write results into file
+# 		puts $fid1Log "Write results for the frame $frame into file"
+		puts $fid1 "$frame_write\t$water_donors\t$water_acceptors\t$water_hBonds\t$water_1hBonds\t$water_2hBonds\t$water_3hBonds\t$water_4hBonds\t$water_m4hBonds\t$water_avghBonds\t$self_hBridges\t$inter_hBridges\t$inter_1hBridges\t$inter_2hBridges\t$inter_3hBridges\t$inter_4hBridges\t$inter_m4hBridges\t$inter_avghBridges\t$inter_dahBonds\t$inter_ddhBonds\t$inter_aahBonds"
+		
+#		$selection delete
+		puts "global frame [expr {$frame + $output_frame_offset}]     file $crnt_file       frame $frame of [expr {($num_steps - 1)}] finished"
+		puts $fid1Log "global frame [expr {$frame + $output_frame_offset}]     file $crnt_file       frame $frame of [expr {($num_steps - 1)}] finished"
+# 		puts $fid1Log "______frame $frame finished ____________________________________________________"
+	}
+	#Close written files
+	close $fid1
+	close $fid1Log
+
+	set output_frame_offset [expr {$output_frame_offset + $num_steps}]
+	animate delete all
+}
+
+mol on top
+
+
+bell
+puts "Finished !!!"
+
+
+
+
