@@ -1,18 +1,18 @@
-###############################################################
-## distances.tcl                                                    #
-## DESCRIPTION:                                                #
-##    This script is quick and easy to provide procedure       #
-## for computing the  distance between sidechains of two AA    #
-## of Protein                  #
-##                                                             #
-## EXAMPLE USAGE:                                              #
-##         vmd -dispdev text -e  distances.tcl >out.log                                #
-##         Selection: chain A and resid 1                      #
-##                                                             #
-##   AUTHORS:                                                  #
-##  C corbiverge                                              #
-##                                                             #
-##                                                              #
+
+## distances.tcl
+## DESCRIPTION:
+##    This script is quick and easy to provide procedure
+## for computing the  distance between sidechains of two AA
+## of Protein
+##
+## EXAMPLE USAGE:
+##         vmd -dispdev text -e  distances.tcl >out.log
+##         Selection: chain A and resid 1
+##
+##   AUTHORS:
+##  C corbiverge
+##
+##                                                              
 ################################################################
 #
 
