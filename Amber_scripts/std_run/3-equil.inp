@@ -1,0 +1,22 @@
+#Equilibration 1
+
+#MD on the waters & ions
+
+ &cntrl
+
+imin=0,
+ntf=2,
+ntb=2,
+ntc=2,
+ntp=1,
+ntpr=500,
+ntwx=500,
+nstlim=50000,
+dt=0.002,
+temp0=100.0,
+ntt=1,
+ntr=1,
+restraint_wt=5,
+restraintmask=':1-271',
+
+&end

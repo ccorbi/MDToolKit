@@ -1,0 +1,9 @@
+logFile leap.2.log
+source /home/ccorbi/bin/amber14/dat/reslib/leap/leaprc.ff03
+p = loadPdb template.pdb
+Addions p Na+ 0
+Addions p Cl- 0
+solvateOct p TIP3PBOX 10.0
+saveAmberParm p  protein.prm protein.inpcrd
+savePdb p amber.protein.pdb
+quit

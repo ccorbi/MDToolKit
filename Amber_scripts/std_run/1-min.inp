@@ -1,0 +1,17 @@
+#Minimisation 1
+
+#Min of complex only
+
+&cntrl
+
+imin=1,
+maxcyc=5000,
+ncyc=100,
+drms=0.5,
+ntr=1
+restraintmask=":WAT,NA,CL,Na+,Cl-,IP,IM", 
+restraint_wt=50,
+
+&end
+
+

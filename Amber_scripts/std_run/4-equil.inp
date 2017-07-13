@@ -1,0 +1,25 @@
+#equilibration 3
+
+#MD on the waters, ions & restrained complex with temp increase to 300K
+
+ &cntrl
+
+ imin=0,
+
+ ntf=2, ntb=2, ntc=2, ntp=1,
+
+ ntpr=500, ntwx=500,
+
+ nstlim=50000, dt=0.002,
+
+ temp0=100.0, ntt=1,
+
+ ntr=1,
+
+ temp0=300, tempi=100,
+
+ restraint_wt=25,
+restraintmask=':1-271',
+
+&end
+
