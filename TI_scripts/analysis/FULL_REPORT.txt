@@ -1,0 +1,80 @@
+::::::::::::::
+RESULT_A57R.txt
+::::::::::::::
+A57R-native result:
+Total DV/DL:2.62635+-15.6007
+Total DV/DL:0.2932+-10.8029
+Total DV/DL:-1.769+-12.0876
+TOTAL = 1.15055 kcal/mol
+::::::::::::::
+RESULT_A57T.txt
+::::::::::::::
+A57T-native result:
+Total DV/DL:0.00239999999999982+-4.65605
+Total DV/DL:1.2269+-6.80275
+Total DV/DL:-1.4531+-6.20645
+TOTAL = -0.2238 kcal/mol
+::::::::::::::
+RESULT_D7A.txt
+::::::::::::::
+D7A-native result:
+Total DV/DL:-1.81555+-22.51225
+Total DV/DL:0.4236+-7.2675
+Total DV/DL:-0.01895+-4.45455
+TOTAL = -1.4109 kcal/mol
+::::::::::::::
+RESULT_N62A.txt
+::::::::::::::
+N62A-native result:
+Total DV/DL:1.4095+-6.28525
+Total DV/DL:3.30165+-7.2004
+Total DV/DL:-3.2104+-3.1015
+TOTAL = 1.50075 kcal/mol
+::::::::::::::
+RESULT_N62L.txt
+::::::::::::::
+N62L-native result:
+Total DV/DL:0.221550000000001+-6.06065
+Total DV/DL:0.77195+-9.4782
+Total DV/DL:-1.25715+-3.10725
+TOTAL = -0.26365 kcal/mol
+::::::::::::::
+RESULT_Q6A.txt
+::::::::::::::
+Q6A-native result:
+Total DV/DL:-0.51895+-6.94005
+Total DV/DL:0.575+-10.21675
+Total DV/DL:-0.20175+-3.9931
+TOTAL = -0.1457 kcal/mol
+::::::::::::::
+RESULT_S58G.txt
+::::::::::::::
+S58G-native result:
+Total DV/DL:0.6629+-6.2543
+Total DV/DL:0.7351+-6.52935
+Total DV/DL:-0.3645+-4.55395
+TOTAL = 1.0335 kcal/mol
+::::::::::::::
+RESULT_S58Q.txt
+::::::::::::::
+S58Q-native result:
+Total DV/DL:2.12125+-6.2452
+Total DV/DL:-0.77345+-8.36615
+Total DV/DL:0.26525+-7.3612
+TOTAL = 1.61305 kcal/mol
+::::::::::::::
+RESULT_S59Q.txt
+::::::::::::::
+S59Q-native result:
+Total DV/DL:1.41825+-5.5357
+Total DV/DL:2.5185+-9.24245
+Total DV/DL:1.41475+-6.9499
+TOTAL = 5.3515 kcal/mol
+::::::::::::::
+RESULT_S59R.txt
+::::::::::::::
+S59R-native result:
+Total DV/DL:-0.1573+-16.0701
+Total DV/DL:1.55585+-11.08805
+Total DV/DL:3.4813+-11.94495
+TOTAL = 4.87985 kcal/mol
