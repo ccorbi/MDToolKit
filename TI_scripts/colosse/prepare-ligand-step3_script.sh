@@ -16,9 +16,9 @@ cat << EOF > group_equi_l${X}
 -O -i mdin_equi_v0_l${X} -o ${pre0}_equi_v0_l${X}.out -p ${pre0}.prm -c ${pre0}_min_v0_l${X}.rst -r ${pre0}_equi_v0_l${X}.rst
 -O -i mdin_equi_v1_l${X} -o ${pre1}_equi_v1_l${X}.out -p ${pre1}.prm -c ${pre1}_min_v1_l${X}.rst -r ${pre1}_equi_v1_l${X}.rst
 EOF
-cat << EOF > group_prod_l${X}
--O -i mdin_prod_v0_l${X} -o ${pre0}_prod_v0_l${X}.out -p ${pre0}.prm -c ${pre0}_equi_v0_l${X}.rst -r ${pre0}_prod_v0_l${X}.rst -x ${pre0}_prod_v0_l${X}.crd
--O -i mdin_prod_v1_l${X} -o ${pre1}_prod_v1_l${X}.out -p ${pre1}.prm -c ${pre1}_equi_v1_l${X}.rst -r ${pre1}_prod_v1_l${X}.rst -x ${pre1}_prod_v1_l${X}.crd
+cat << EOF > group_prod1_l${X}
+-O -i mdin_prod1_v0_l${X} -o ${pre0}_prod1_v0_l${X}.out -p ${pre0}.prm -c ${pre0}_equi_v0_l${X}.rst -r ${pre0}_prod1_v0_l${X}.rst -x ${pre0}_prod1_v0_l${X}.crd
+-O -i mdin_prod1_v1_l${X} -o ${pre1}_prod1_v1_l${X}.out -p ${pre1}.prm -c ${pre1}_equi_v1_l${X}.rst -r ${pre1}_prod1_v1_l${X}.rst -x ${pre1}_prod1_v1_l${X}.crd
 EOF
 
 cat << EOF > mdin_min_v0_l${X}
@@ -65,8 +65,8 @@ cat << EOF >> mdin_equi_v1_l${X}
  &end
 EOF
 
-cat << EOF > mdin_prod_v0_l${X}
-NPT production
+cat << EOF > mdin_prod1_v0_l${X}
+NPT prod1uction
  &cntrl
   imin = 0,	ntx = 5,	irest = 1,
   ntpr = 10000,	ntwr = 100000,	ntwx = 10000,
@@ -78,13 +78,13 @@ NPT production
   icfe=1,       clambda = 0.${X},
 EOF
 
-cp mdin_prod_v0_l${X} mdin_prod_v1_l${X}
+cp mdin_prod1_v0_l${X} mdin_prod1_v1_l${X}
 
-cat << EOF >> mdin_prod_v0_l${X}
+cat << EOF >> mdin_prod1_v0_l${X}
   crgmask='${mask_noncanon}',
  &end
 EOF
-cat << EOF >> mdin_prod_v1_l${X}
+cat << EOF >> mdin_prod1_v1_l${X}
  &end
 EOF
 
@@ -108,7 +108,7 @@ module load intel intelmpi fftw/3.3.0-intel-impi amber/10.0.30
 # Run the parallel version of sander, using all 8 cores in the node
 mpirun -np 8  sander.MPI -O -ng 2 -groupfile group_min_l${X}
 mpirun -np 8  sander.MPI -O -ng 2 -groupfile group_equi_l${X}
-mpirun -np 8  sander.MPI -O -ng 2 -groupfile group_prod_l${X}
+mpirun -np 8  sander.MPI -O -ng 2 -groupfile group_prod1_l${X}
 EOF
 
 msub run.pbs.${X}
