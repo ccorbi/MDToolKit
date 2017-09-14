@@ -21,14 +21,48 @@ import numpy as np
 #
 #         self.clambas = clambdas
 #         self.maks
+def run_parmed(folder, resid, len_lig, system):
+    '''Deduplication and mask
+    '''
+    # protein.parm7
+    ligan_parm = """loadRestrt {system}_vdw_bonded.rst7
+                    setOverwrite True
+                    tiMerge :1-{} :{}-{} :{} :{}
+                    outparm {system}_vdw_bonded.parm7 {system}_vdw_bonded.rst7
+                    quit""".format(len_lig, len_lig + 1, len_lig*2, resid, resid+len_lig, system=system)
+    print(ligan_parm, file=open(folder+'/{}.parmed'.format(system),'w') )
 
-def compile_mask(status, pos, l):
+    process = subprocess.Popen('parmed {0}_vdw_bonded.parm7 -i {0}.parmed'.format(system).split(), cwd=folder, stdout=subprocess.PIPE)
+    # wait for the process to terminate
+    out = process.communicate()
+    # both process return same mask
+
+    masks = parse_masks_parmed(out)
+
+    return masks
+
+def parse_masks_parmed(output):
+
+    mask = defaultdict(list)
+
+    s = output[0].decode("utf-8")
+    for line in s.split('\n'):
+        if line.startswith('timask'):
+            mask['timask'].append(line.strip())
+        if line.startswith('scmask'):
+            mask['scmask'].append(line.strip())
+
+
+    return mask
+
+def compile_mask(status, masks, pos, l):
+
     mask = defaultdict(list)
     # mask assuming Ligand are first in the pdb
-    mask['timask'].append("""timask1 = ':1-{}',""".format(l))
-    mask['timask'].append("""timask2 = ':{}-{}',""".format(l+1,l*2))
+    mask['timask'].append(masks['timask'][0])
+    mask['timask'].append(masks['timask'][1])
 
-    mask['scmask'].append(""" ifsc=1, scmask1=':{}', scmask2=':{}',""".format(pos,l+pos))
+    mask['scmask'].append(""" ifsc=1, {} {}""".format(masks['scmask'][0], masks['scmask'][1]))
 
     if status == 'vdw_bonded':
         # setup softcore potentials
@@ -347,39 +381,6 @@ def strip_comp(folder, system, len_lig):
         # wait for the process to terminate
     out = process.communicate()
 
-# def run_parmed(folder, resid, len_lig, system):
-#     '''Deduplication and mask
-#     '''
-#     # protein.parm7
-#     ligan_parm = """loadRestrt {system}_vdw.rst7
-#                     setOverwrite True
-#                     tiMerge :1-{} :{}-{} :{} :{}
-#                     outparm merged_{system}_vdw.parm7 merged_{system}_vdw.rst7
-#                     quit""".format(len_lig, len_lig + 1, len_lig*2, resid, resid+len_lig, system=system)
-#     print(ligan_parm, file=open(folder+'/{}.parmed'.format(system),'w') )
-#
-#     process = subprocess.Popen('parmed.py {0}_vdw.parm7 -i {0}.parmed'.format(system).split(), cwd=folder, stdout=subprocess.PIPE)
-#     # wait for the process to terminate
-#     out = process.communicate()
-#     # both process return same mask
-#     masks = parse_masks_parmed(out)
-#
-#     return masks
-
-# def parse_masks_parmed(output):
-#
-#     mask = defaultdict(list)
-#
-#     s = output[0].decode("utf-8")
-#     for line in s.split('\n'):
-#         if line.startswith('timask'):
-#             mask['timask'].append(line.strip())
-#         if line.startswith('scmask'):
-#             mask['scmask'].append(line.strip())
-#
-#
-#     return mask
-
 
 
 
@@ -453,17 +454,23 @@ if __name__ == '__main__':
     # Create topologies
     create_topologies(MAIN)
     # run parmed
+    for s in systems:
+        parsed_masks = run_parmed(MAIN, args.resid, len(residues), s)
 
 
-    # timask1 = ':1', timask2 = ':2',
-    # complete removal/addition of charges
-    #decharge=" ifsc = 0, crgmask = ':2',"
-    #vdw_bonded=" ifsc=1, scmask1=':1', scmask2=':2', crgmask=':1,2'"
-    #recharge=" ifsc = 0, crgmask = ':1',"
 
     for s in systems:
         for state in ['decharge' ,'vdw_bonded' ,'recharge']:
-            masks = compile_mask(state, args.resid, len(residues) )
+            masks = compile_mask(state, parsed_masks, args.resid, len(residues) )
+            # masks control
+            if len(masks) == 0:
+                print('masks empty')
+                raise ValueError
+            if len(masks['scmask']) != 2 or len(masks['timask']) != 2:
+                print('masks empty')
+                print(masks)
+                raise ValueError
+
         #create_amber_scripts(MAIN, s, windows, masks, steps=args.steps)
             for w in windows:
                 shutil.copy(MAIN+'/{}_{}.parm7'.format(s,state), MAIN+'/{}/{}/{:.3f}/ti.parm7'.format(s,state,w) )
