@@ -5,7 +5,7 @@ from math import sqrt
 #to use the script, choose the right filename prefix
 #################################################################################################################
 ## loops over "fn" of output files .
-## fn = file number 
+## fn = file number
 def read_dvdl_out(filename):
 
     dvdl=[];rms_dvdl=[];
@@ -33,11 +33,11 @@ def write_dvdl_prep( dvdl,rms_dvdl,file):
 #################################################################################################################
 def main():
 
-########calculate sub_dvdl and sub_rms_dvdl for different steps. 
+########calculate sub_dvdl and sub_rms_dvdl for different steps.
     sub_dvdl=[];sub_rms_dvdl=[];
 
     for i in range(1,4):
-        filename = "lig_step"+str(i)+".report";    
+        filename = "lig_step"+str(i)+".report";
         l_dvdl,l_rms_dvdl=read_dvdl_out(filename);
         filename = "comp_step"+str(i)+".report";
         c_dvdl,c_rms_dvdl=read_dvdl_out(filename);
@@ -46,9 +46,9 @@ def main():
             sub_rms_dvdl.append( sqrt( c_rms_dvdl[j]**2 + l_rms_dvdl[j]**2) );
 
         file_integ = "integ_prep_step"+str(i);
-        file = open( file_integ, 'write' );
+        file = open( file_integ, 'w' );
         write_dvdl_prep( sub_dvdl,sub_rms_dvdl,file );
-        sub_dvdl = []; sub_rms_dvdl = []; 
+        sub_dvdl = []; sub_rms_dvdl = [];
         file.close()
 #################################################################################################################
 main()

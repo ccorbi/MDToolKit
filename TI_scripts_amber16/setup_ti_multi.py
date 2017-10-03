@@ -62,19 +62,20 @@ def compile_mask(status, masks, pos, l):
     mask['timask'].append(masks['timask'][0])
     mask['timask'].append(masks['timask'][1])
 
-    mask['scmask'].append(""" ifsc=1, {} {}""".format(masks['scmask'][0], masks['scmask'][1]))
+
 
     if status == 'vdw_bonded':
         # setup softcore potentials
-        mask['scmask'].append(""" crgmask=':{},{}' """.format(pos,l+pos))
+        mask['scmask'].append(""" ifsc=1, {} {}""".format(masks['scmask'][0], masks['scmask'][1]))
+        mask['scmask'].append(""" crgmask=':{},{}' ,""".format(pos,l+1))
 
     if status == 'decharge':
-        #mask['scmask'].append(""" ifsc=0, """)
-        mask['scmask'].append(""" crgmask=':{}' """.format(l+pos))
+        mask['scmask'].append(""" ifsc=0, """)
+        mask['scmask'].append(""" crgmask=':{}' ,""".format(l+1))
 
     if status == 'recharge':
-        #mask['scmask'].append(""" ifsc=0,""")
-        mask['scmask'].append(""" crgmask=':{}' """.format(pos))
+        mask['scmask'].append(""" ifsc=0,""")
+        mask['scmask'].append(""" crgmask=':{}' ,""".format(pos))
 
     return mask
 
@@ -94,7 +95,7 @@ def create_amber_scripts(folder, system, clambdas, masks, steps=400000):
             output.close()
 
 
-def mini_protocol(clambda, masks, steps=2000,nsteps=0):
+def mini_protocol(clambda, masks, steps=8000,nsteps=0):
 
     protocol = """minimisation
      &cntrl
@@ -103,7 +104,7 @@ def mini_protocol(clambda, masks, steps=2000,nsteps=0):
     dx0 = 1.0D-7,
     ntb = 1,
 
-    icfe = 1, ifsc = 1, clambda = {clambda}, scalpha = 0.5, scbeta = 12.0,
+    icfe = 1, clambda = {clambda}, scalpha = 0.5, scbeta = 12.0,
     logdvdl = 0,
     {timask1} {timask2}
     {scmask1} {scmask2}
@@ -134,7 +135,7 @@ def heat_protocol(clambda, masks, steps=20000,nsteps=0):
     ntr = 1, restraint_wt = 5.00,
     restraintmask='!:WAT & !@H=',
 
-    icfe = 1, ifsc = 1, clambda = {clambda:.3f}, scalpha = 0.5, scbeta = 12.0,
+    icfe = 1, clambda = {clambda:.3f}, scalpha = 0.5, scbeta = 12.0,
     logdvdl = 0,
     {timask1} {timask2}
     {scmask1} {scmask2}
@@ -169,7 +170,7 @@ def prod_protocol(clambda, masks, nsteps=100000):
     ioutfm = 1, iwrap = 1,
     ntwe = 1000, ntwx = 10000, ntpr = 10000, ntwr = 20000,
 
-    icfe = 1, ifsc = 1, clambda = {clambda:.3f}, scalpha = 0.5, scbeta = 12.0,
+    icfe = 1, clambda = {clambda:.3f}, scalpha = 0.5, scbeta = 12.0,
     logdvdl = 1,
     barostat = 2, ifmbar = 0, bar_intervall = 1000, bar_l_min = 0.0, bar_l_max = 1.0,
     bar_l_incr = 0.1,
@@ -353,9 +354,9 @@ def create_topologies(folder):
     return
 
 
-def strip_comp(folder, system, len_lig):
+def strip_comp(folder, system, resid, len_lig):
     mut_start = len_lig+1
-    mut_end = len_lig*2
+    mut_end = len_lig+1
 
     trajin = """parm {system}_vdw_bonded.parm7
                 trajin {system}_vdw_bonded.rst7
@@ -448,11 +449,12 @@ if __name__ == '__main__':
     # merge tleap
     merge_topologies(MAIN)
     # strip water, and molecules
-    for s in systems:
-        strip_comp(MAIN, s, len(residues))
+#    for s in systems:
+#        strip_comp(MAIN, s, args.resid, len(residues))
 
     # Create topologies
-    create_topologies(MAIN)
+    #create_topologies(MAIN)
+
     # run parmed
     for s in systems:
         parsed_masks = run_parmed(MAIN, args.resid, len(residues), s)
@@ -473,8 +475,8 @@ if __name__ == '__main__':
 
         #create_amber_scripts(MAIN, s, windows, masks, steps=args.steps)
             for w in windows:
-                shutil.copy(MAIN+'/{}_{}.parm7'.format(s,state), MAIN+'/{}/{}/{:.3f}/ti.parm7'.format(s,state,w) )
-                shutil.copy(MAIN+'/{}_{}.rst7'.format(s, state), MAIN+'/{}/{}/{:.3f}/ti.rst7'.format(s,state,w) )
+                shutil.copy(MAIN+'/{}_vdw_bonded.parm7'.format(s), MAIN+'/{}/{}/{:.3f}/ti.parm7'.format(s,state,w) )
+                shutil.copy(MAIN+'/{}_vdw_bonded.rst7'.format(s), MAIN+'/{}/{}/{:.3f}/ti.rst7'.format(s,state,w) )
 
             create_amber_scripts(MAIN, s+'/'+state+'/', windows, masks, steps=args.steps)
 

@@ -98,7 +98,7 @@ def main():
     average_dvdl, rms_dvdl = read_TIMD_out( fileprefix, lbda )
 
     file_report = "report." + fileprefix
-    fileout = open( file_report, 'write' )
+    fileout = open( file_report, 'w' )
     write_TIMD_report(ksteps,average_dvdl,rms_dvdl, lbda, fileout)
     fileout.close()
 #################################################################################################################

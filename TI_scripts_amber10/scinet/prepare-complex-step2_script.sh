@@ -119,7 +119,9 @@ cat << EOF > run.pbs.${X}
 cd \$PBS_O_WORKDIR
 
 module purge
-module load intel intelmpi fftw/3.3.0-intel-impi amber/10.0.30
+#module load intel intelmpi fftw/3.3.0-intel-impi amber/10.0.30
+module load intel/15.0.2 intelmpi/5.0.3.048 gcc/4.8.1  cuda/6.0 amber/14.0
+
 
 # Run the parallel version of sander, using all 8 cores in the node
 mpirun -np 2  sander.MPI -O -ng 2 -groupfile group_min_l${X}
