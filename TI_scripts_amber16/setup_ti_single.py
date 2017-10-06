@@ -36,7 +36,7 @@ def compile_mask(pos, l):
 
     return mask
 
-def create_amber_scripts(folder, system, clambdas, masks, msteps=2000, hsteps=5000, psteps=40000):
+def create_amber_scripts(folder, system, clambdas, masks, increment, msteps=2000, hsteps=5000, psteps=40000):
 
 
 
@@ -47,7 +47,8 @@ def create_amber_scripts(folder, system, clambdas, masks, msteps=2000, hsteps=50
                                 timask1=masks['timask'][0],
                                 timask2=masks['timask'][1],
                                 scmask1=masks['scmask'][0],
-                                scmask2=masks['scmask'][1])
+                                scmask2=masks['scmask'][1],
+                                increment=increment)
             path = '{}/{}/{:.3f}/{}.in'.format(folder, system, l,step)
             output = open(path,'w')
             print(prot_input, file=output)
@@ -226,8 +227,8 @@ def merge_topologies(folder):
     # create ligand in solution
     Addions ligand NA 0
     Addions ligand CL 0
-    Addions ligand NA 1
-    Addions ligand CL 1
+    #Addions ligand NA 1
+    #Addions ligand CL 1
     solvateOct ligand TIP3PBOX 14.0
     setbox ligand vdw
 
@@ -325,12 +326,10 @@ def get_args():
     ## todo simplify mutations to X#X
     parser = argparse.ArgumentParser()
     parser.add_argument("--ligand", type=str)
-    parser.add_argument("--res", type=str)
-    parser.add_argument("--resid", type=int)
     parser.add_argument("--chain", type=str, default='')
     parser.add_argument("--mutation", type=str )
     parser.add_argument("--target", type=str )
-    parser.add_argument("--l", type=float, default=.1 )
+    parser.add_argument("--increment", type=float, default=.1 )
     parser.add_argument("--msteps", type=int,default=4000 )
     parser.add_argument("--hsteps", type=int,default=5000 )
     parser.add_argument("--psteps", type=int,default=2500000 )
@@ -342,9 +341,12 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
     # generate lambdas
-    windows = np.arange(0,1+args.l,args.l)
+    res_num = args.mutation[3:-3]
+    res_wt =  args.mutation[-3:]
+    res_mut = args.mutation[:3]
+    windows = np.arange(0,1+args.increment,args.increment)
     # Create Folders  & copy data
-    MAIN = './MUTATION/' + args.res + str(args.resid) + args.mutation
+    MAIN = './MUTATION/' +  args.mutation
     # systems
     LIG = 'ligand'
     COM = 'complex'
@@ -356,19 +358,19 @@ if __name__ == '__main__':
     shutil.copy(args.target, MAIN+'/trgt.pdb' )
     # Simple MUTATION
     mut_ligand = open(MAIN+'/mut_lig.pdb','w')
-    residues = mutate(args.res, args.resid, args.chain, args.mutation, MAIN+'/lig.pdb', mut_ligand)
+    residues = mutate(res_wt, res_num, args.chain, res_mut, MAIN+'/lig.pdb', mut_ligand)
     mut_ligand.close()
     # merge tleap
     merge_topologies(MAIN)
 
     # run parmed
     for s in systems:
-        masks = run_parmed(MAIN, args.resid, len(residues), s)
+        masks = run_parmed(MAIN, res_num, len(residues), s)
 
-    masks = compile_mask(args.resid, len(residues))
+    masks = compile_mask(res_num, len(residues))
     # create amber scripts
     for s in systems:
-        create_amber_scripts(MAIN, s, windows, masks, msteps=args.msteps, hsteps=args.hsteps, psteps=args.psteps)
+        create_amber_scripts(MAIN, s, windows, masks, increment=args.increment, msteps=args.msteps, hsteps=args.hsteps, psteps=args.psteps)
         for w in windows:
             shutil.copy(MAIN+'/merged_{}.parm7'.format(s), MAIN+'/{}/{:.3f}/ti.parm7'.format(s,w) )
             shutil.copy(MAIN+'/merged_{}.rst7'.format(s), MAIN+'/{}/{:.3f}/ti.rst7'.format(s,w) )

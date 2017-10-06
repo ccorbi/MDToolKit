@@ -13,6 +13,9 @@ from collections import defaultdict
 import numpy as np
 
 
+from protocols import STD_INPUT, GEN_INPUT
+
+AmberProtocols = GEN_INPUT
 
 ### All these protocols should be a class, TODO
 # class AmberProtocols(object):
@@ -29,7 +32,7 @@ def run_parmed(folder, resid, len_lig, system):
                     setOverwrite True
                     tiMerge :1-{} :{}-{} :{} :{}
                     outparm {system}_vdw_bonded.parm7 {system}_vdw_bonded.rst7
-                    quit""".format(len_lig, len_lig + 1, len_lig*2, resid, resid+len_lig, system=system)
+                    quit""".format(len_lig, len_lig + 1, len_lig*2, resid, int(resid)+len_lig, system=system)
     print(ligan_parm, file=open(folder+'/{}.parmed'.format(system),'w') )
 
     process = subprocess.Popen('parmed {0}_vdw_bonded.parm7 -i {0}.parmed'.format(system).split(), cwd=folder, stdout=subprocess.PIPE)
@@ -59,136 +62,45 @@ def compile_mask(status, masks, pos, l):
 
     mask = defaultdict(list)
     # mask assuming Ligand are first in the pdb
-    mask['timask'].append(masks['timask'][0])
-    mask['timask'].append(masks['timask'][1])
+    mask['timask'].append("""timask1=':{}',""".format(pos))
+    mask['timask'].append("""timask2=':{}',""".format(l))
+    mask['scmask'].append("""scmask1=':{}', scmask2=':{}', """.format(pos, l))
 
 
 
     if status == 'vdw_bonded':
         # setup softcore potentials
-        mask['scmask'].append(""" ifsc=1, {} {}""".format(masks['scmask'][0], masks['scmask'][1]))
-        mask['scmask'].append(""" crgmask=':{},{}' ,""".format(pos,l+1))
+        mask['scmask'].append(""" crgmask=':{}|:{}' ,""".format(pos,l+1))
 
     if status == 'decharge':
-        mask['scmask'].append(""" ifsc=0, """)
+
         mask['scmask'].append(""" crgmask=':{}' ,""".format(l+1))
 
     if status == 'recharge':
-        mask['scmask'].append(""" ifsc=0,""")
+
         mask['scmask'].append(""" crgmask=':{}' ,""".format(pos))
 
     return mask
 
-def create_amber_scripts(folder, system, clambdas, masks, steps=400000):
+def create_amber_scripts(folder, l, masks, increment, msteps=2000, hsteps=5000, psteps=40000):
 
-    protocols_steps = {'min':mini_protocol,
-                        'heat':heat_protocol,
-                        'prod':prod_protocol
-                        }
-    for l in clambdas:
-        for step, protocol in protocols_steps.items():
+
+
+#    for l in clambdas:
+        for step, proto in AmberProtocols.items():
             # fix steps, using a class
-            mini = protocol(l, masks, nsteps=steps)
-            path = '{}/{}/{:.3f}/{}.in'.format(folder, system, l,step)
+            prot_input = proto.format(clambda=l, msteps=msteps, hsteps=hsteps, psteps=psteps,
+                                timask1=masks['timask'][0],
+                                timask2=masks['timask'][1],
+                                scmask1=masks['scmask'][0],
+                                scmask2=masks['scmask'][1],
+                                increment=increment)
+            path = '{}/{:.3f}/{}.in'.format(folder,  l, step)
+            # MAIN+'/{}/{}/{:.3f}/ti.rst7'.format(s,state,w)
             output = open(path,'w')
-            print(mini, file=output)
+            print(prot_input, file=output)
             output.close()
 
-
-def mini_protocol(clambda, masks, steps=8000,nsteps=0):
-
-    protocol = """minimisation
-     &cntrl
-    imin = 1, ntmin = 2, maxcyc = {steps},
-    ntpr = 200, ntwe = 200,
-    dx0 = 1.0D-7,
-    ntb = 1,
-
-    icfe = 1, clambda = {clambda}, scalpha = 0.5, scbeta = 12.0,
-    logdvdl = 0,
-    {timask1} {timask2}
-    {scmask1} {scmask2}
-    /
-     &ewald
-    /
-    &end""".format(steps=steps,
-                    clambda=clambda,
-                    timask1=masks['timask'][0],
-                    timask2=masks['timask'][1],
-                    scmask1=masks['scmask'][0],
-                    scmask2=masks['scmask'][1])
-    return protocol
-
-
-def heat_protocol(clambda, masks, steps=20000,nsteps=0):
-
-    protocol = """heating
-     &cntrl
-    imin = 0, nstlim = {steps}, irest = 0, ntx = 1, dt = 0.002,
-    ntt = 3, temp0 = 300.0, tempi = 50.0, tautp = 1.0,
-    ntc = 2, ntf = 1,
-    ntb = 1,
-    ioutfm = 1, iwrap = 1,
-    ntwe = 1000, ntwx = 1000, ntpr = 1000, ntwr = 5000,
-
-    nmropt = 1,
-    ntr = 1, restraint_wt = 5.00,
-    restraintmask='!:WAT & !@H=',
-
-    icfe = 1, clambda = {clambda:.3f}, scalpha = 0.5, scbeta = 12.0,
-    logdvdl = 0,
-    {timask1} {timask2}
-    {scmask1} {scmask2}
-    /
-    &ewald
-    /
-    &wt
-    type='TEMP0',
-    istep1 = 0, istep2 = 12000,
-    value1 = 50.0, value2 = 300.0
-    /
-    &wt type = 'END'
-    /""".format(steps=steps,
-                clambda=clambda,
-                timask1=masks['timask'][0],
-                timask2=masks['timask'][1],
-                scmask1=masks['scmask'][0],
-                scmask2=masks['scmask'][1])
-
-    return protocol
-
-
-def prod_protocol(clambda, masks, nsteps=100000):
-
-    protocol ="""TI simulation
-     &cntrl
-    imin = 0, nstlim = {steps}, irest = 1, ntx = 5, dt = 0.002,
-    ntt = 3, temp0 = 300.0, gamma_ln = 2.0, ig = -1,
-    ntc = 2, ntf = 1,
-    ntb = 2,
-    ntp = 1, pres0 = 1.0, taup = 2.0,
-    ioutfm = 1, iwrap = 1,
-    ntwe = 1000, ntwx = 10000, ntpr = 10000, ntwr = 20000,
-
-    icfe = 1, clambda = {clambda:.3f}, scalpha = 0.5, scbeta = 12.0,
-    logdvdl = 1,
-    barostat = 2, ifmbar = 0, bar_intervall = 1000, bar_l_min = 0.0, bar_l_max = 1.0,
-    bar_l_incr = 0.1,
-    {timask1} {timask1}
-    {scmask1} {scmask2}
-
-    /
-
-
-    &ewald
-    / """.format(steps=nsteps,
-                clambda=clambda,
-                timask1=masks['timask'][0],
-                timask2=masks['timask'][1],
-                scmask1=masks['scmask'][0],
-                scmask2=masks['scmask'][1])
-
-    return protocol
 
 
 def mutate(res, resid, chain, mutatation, template, output):
@@ -202,7 +114,7 @@ def mutate(res, resid, chain, mutatation, template, output):
 
     """
     residues = dict()
-    backbone = ['C','O', 'N', 'H']
+    backbone = ['C','O', 'N', 'CA', 'CB', 'H', 'HA']
     with open(template,'r') as input_file:
         for line in input_file:
             if line.startswith('ATOM') or line.startswith('HETATM'):
@@ -272,8 +184,8 @@ def merge_topologies(folder):
     # create ligand in solution
     Addions ligand NA 0
     Addions ligand CL 0
-    Addions ligand NA 1
-    Addions ligand CL 1
+    #Addions ligand NA 1
+    #Addions ligand CL 1
     solvateOct ligand TIP3PBOX 12.0
 
     savepdb ligand ligand_vdw_bonded.pdb
@@ -413,15 +325,16 @@ def mkdir(folder):
 
 
 def get_args():
+    ## todo simplify mutations to X#X
     parser = argparse.ArgumentParser()
     parser.add_argument("--ligand", type=str)
-    parser.add_argument("--res", type=str)
-    parser.add_argument("--resid", type=int)
     parser.add_argument("--chain", type=str, default='')
     parser.add_argument("--mutation", type=str )
     parser.add_argument("--target", type=str )
-    parser.add_argument("--l", type=float )
-    parser.add_argument("--steps", type=int,default=400000 )
+    parser.add_argument("--increment", type=float, default=.1 )
+    parser.add_argument("--msteps", type=int,default=4000 )
+    parser.add_argument("--hsteps", type=int,default=5000 )
+    parser.add_argument("--psteps", type=int,default=2500000 )
     #parser.set_defaults(nice=False)
     args = parser.parse_args()
     return args
@@ -430,9 +343,12 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
     # generate lambdas
-    windows = np.arange(0,1+args.l,args.l)
+    res_num = args.mutation[3:-3]
+    res_wt =  args.mutation[-3:]
+    res_mut = args.mutation[:3]
+    windows = np.arange(0,1+args.increment,args.increment)
     # Create Folders  & copy data
-    MAIN = './MUTATION/' + args.res + str(args.resid) + args.mutation
+    MAIN = './MUTATION/' +  args.mutation
     # systems
     LIG = 'ligand'
     COM = 'complex'
@@ -444,7 +360,7 @@ if __name__ == '__main__':
     shutil.copy(args.target, MAIN+'/trgt.pdb' )
     # Simple MUTATION
     mut_ligand = open(MAIN+'/mut_lig.pdb','w')
-    residues = mutate(args.res, args.resid, args.chain, args.mutation, MAIN+'/lig.pdb', mut_ligand)
+    residues = mutate(res_wt, res_num, args.chain, res_mut, MAIN+'/lig.pdb', mut_ligand)
     mut_ligand.close()
     # merge tleap
     merge_topologies(MAIN)
@@ -457,13 +373,13 @@ if __name__ == '__main__':
 
     # run parmed
     for s in systems:
-        parsed_masks = run_parmed(MAIN, args.resid, len(residues), s)
+        parsed_masks = run_parmed(MAIN, res_num, len(residues), s)
 
 
 
     for s in systems:
         for state in ['decharge' ,'vdw_bonded' ,'recharge']:
-            masks = compile_mask(state, parsed_masks, args.resid, len(residues) )
+            masks = compile_mask(state, parsed_masks, res_num, len(residues) )
             # masks control
             if len(masks) == 0:
                 print('masks empty')
@@ -477,8 +393,9 @@ if __name__ == '__main__':
             for w in windows:
                 shutil.copy(MAIN+'/{}_vdw_bonded.parm7'.format(s), MAIN+'/{}/{}/{:.3f}/ti.parm7'.format(s,state,w) )
                 shutil.copy(MAIN+'/{}_vdw_bonded.rst7'.format(s), MAIN+'/{}/{}/{:.3f}/ti.rst7'.format(s,state,w) )
-
-            create_amber_scripts(MAIN, s+'/'+state+'/', windows, masks, steps=args.steps)
+                #  create_amber_scripts(folder, l, masks, increment
+                fol = MAIN+'/{}/{}/'.format(s,state)
+                create_amber_scripts(fol, w, masks, increment=args.increment, msteps=args.msteps, hsteps=args.hsteps, psteps=args.psteps)
 
 
     # create restart script
