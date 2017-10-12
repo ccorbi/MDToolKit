@@ -4,22 +4,28 @@
 windows=$(seq 0.00 0.100 1.0)
 amber=/home/ccorbi/amber16
 mdrun=${amber}/bin/pmemd.cuda
-N='1'
+
 #cd complex
 for status in complex ligand; do
   cd $status
-  for w in $windows; do
-    cd $w
+  echo $status
+#  for step in decharge vdw_bonded recharge;do
+#    cd $step
+#    echo $step
+    for w in $windows; do
+      cd $w
+      echo $W
+      pwd
 
   # adapt below for your job scheduler
 export LD_LIBRARY_PATH=$AMBERHOME/lib:$LD_LIBRARY_PATH
 
 cat << EOF > run.gpusub
 #!/bin/bash
-#SBATCH --account=def-mikeuoft
+#SBATCH --cpus-per-task=1
 #SBATCH --gres=gpu:1              # request GPU "generic resource"
-#SBATCH --mem=4000M               # memory per node
-#SBATCH --time=0-10:00            # time (DD-HH:MM)
+#SBATCH --mem=8g               # memory per node
+#SBATCH --time=0-5:00            # time (DD-HH:MM)
 #SBATCH --output=%N-%j.out        # %N for node name, %j for jobID
 # nvidia-smi
 
@@ -29,24 +35,33 @@ cd \$SLURM_SUBMIT_DIR
 # module purge
 module load gcc/4.8.5 openmpi fftw
 
-export PATH=/usr/local/cuda-7.5/bin:\$PATH
+export PATH=/usr/local/cuda-8.0/bin:\$PATH
 export LPATH=/usr/lib64/nvidia-current:\$LPATH
 export LPATH=/usr/lib64/nvidia:\$LPATH
 export LIBRARY_PATH=/usr/lib64/nvidia-current:\$LIBRARY_PATH
 export LIBRARY_PATH=/usr/lib64/nvidia:\$LIBRARY_PATH
-export LD_LIBRARY_PATH=/usr/lib64/nvidia-current:/usr/local/cuda/lib64:/usr/local/cuda/lib:\$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=/usr/lib64/nvidia:/usr/local/cuda/lib64:/usr/local/cuda/lib:\$LD_LIBRARY_PATH
-export CUDA_HOME=/usr/local/cuda-7.5
-export LD_LIBRARY_PATH="/usr/local/cuda-7.5/lib:\${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH=/usr/lib64/nvidia-current:\$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/lib64/nvidia:/usr/local/cuda-8.0/lib64:/usr/local/cuda-8.0/lib:\$LD_LIBRARY_PATH
+export CUDA_HOME=/usr/local/cuda-8.0
+
 # load amber
 source ${amber}/amber.sh
 
-# Run the parallel version of sander, using all 8 cores in the node
-$mdrun -O -i min.in -c ti.rst7 -ref ti.rst7 -p ti.parm7 -o min.out -inf min.info -e min.en -r min.rst7 -l min.log
 
-$mdrun -O -i heat.in -c min.rst7 -ref ti.rst7 -p ti.parm7 -o heat.out -inf heat.info -e heat.en -r heat.rst7 -x heat.nc -l heat.log
+$mdrun -O -i 1-min.in -c ti.rst7 -ref ti.rst7 -p ti.parm7 -o min.1.out -inf min.1.info -e min.1.en -r min.1.rst7 -l min.log
+$mdrun -O -i 2-min.in -c min.1.rst7  -p ti.parm7 -o min.2.out -inf min.2.info -e min.2.en -r min.2.rst7 -l min.log
 
-$mdrun -O -i ti.in -c heat.rst7 -p ti.parm7 -o ti00${N}.out -inf ti00${N}.info -e ti00${N}.en -r ti00${N}.inpcrd -x ti00${N}.nc -l ti00${N}.log
+$mdrun  -O -i 3-equil.in -o equil.3.out -p ti.parm7 -c min.2.rst7 -r equil.3.rst7 -ref min.2.rst7
+$mdrun  -O -i 4-equil.in -o equil.4.out -p ti.parm7 -c  equil.3.rst7 -r equil.4.rst7 -ref equil.3.rst7
+
+
+$mdrun  -O -i  prod.in -o ti.1.out -p  ti.parm7 -c  equil.4.rst7 -x ti.1.nc  -r ti.1.rst7 -ref equil.4.rst7 -e ti001.en
+
+
+for N in {2..3}
+do
+$mdrun -O -i prod.in -o ti.\$N.out -p ti.parm7 -c  ti.\$((\$N-1)).rst7 -x ti.\$N.nc  -r ti.\$N.rst7 -e ti00\$N.en
+done
 EOF
 
 # adapt above for your job scheduler

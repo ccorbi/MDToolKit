@@ -32,6 +32,7 @@ def run_parmed(folder, resid, len_lig, system):
                     setOverwrite True
                     tiMerge :1-{} :{}-{} :{} :{}
                     outparm {system}_vdw_bonded.parm7 {system}_vdw_bonded.rst7
+                    outpdb merged_{system}.pdb
                     quit""".format(len_lig, len_lig + 1, len_lig*2, resid, int(resid)+len_lig, system=system)
     print(ligan_parm, file=open(folder+'/{}.parmed'.format(system),'w') )
 
@@ -52,33 +53,33 @@ def parse_masks_parmed(output):
     for line in s.split('\n'):
         if line.startswith('timask'):
             mask['timask'].append(line.strip())
-        if line.startswith('scmask'):
-            mask['scmask'].append(line.strip())
+        # if line.startswith('scmask'):
+        #     mask['scmask'].append(line.strip())
 
 
     return mask
 
 def compile_mask(status, masks, pos, l):
 
-    mask = defaultdict(list)
+    #mask = defaultdict(list)
+    mask = masks.copy()
     # mask assuming Ligand are first in the pdb
-    mask['timask'].append("""timask1=':{}',""".format(pos))
-    mask['timask'].append("""timask2=':{}',""".format(l))
-    mask['scmask'].append("""scmask1=':{}', scmask2=':{}', """.format(pos, l))
+    mask['scmask'].append('''scmask1=':{}& !@CA,C,O,N,CB,H,HA', '''.format(pos))
+    mask['scmask'].append('''scmask2=':{}& !@CA,C,O,N,CB,H,HA', '''.format(l+1))
 
 
 
     if status == 'vdw_bonded':
-        # setup softcore potentials
-        mask['scmask'].append(""" crgmask=':{}|:{}' ,""".format(pos,l+1))
+        # setup decharge
+        mask['scmask'][1] = mask['scmask'][1]  + """ crgmask=':{}|:{}' ,""".format(pos,l+1)
 
     if status == 'decharge':
 
-        mask['scmask'].append(""" crgmask=':{}' ,""".format(l+1))
+        mask['scmask'][1] = mask['scmask'][1]  + """ crgmask=':{}' ,""".format(l+1)
 
     if status == 'recharge':
 
-        mask['scmask'].append(""" crgmask=':{}' ,""".format(pos))
+        mask['scmask'][1] = mask['scmask'][1]  + """ crgmask=':{}' ,""".format(pos)
 
     return mask
 
@@ -144,7 +145,7 @@ def mutate(res, resid, chain, mutatation, template, output):
                 print(line.rstrip(), file=output)
                 continue
 
-            if atom_data['res_type'] == res  and atom_data['res_num'] == resid:
+            if atom_data['res_type'] == res  and atom_data['res_num'] == int(resid):
                 if  atom_data['atom_type'] in backbone:
                     line = line.replace(res, mutatation)
                     # save
@@ -180,13 +181,16 @@ def merge_topologies(folder):
     ligand = combine {m1 m2}
     complex = combine {m1 m2 target}
 
+    # do not recenter coordinates
+    set default nocenter on
 
     # create ligand in solution
     Addions ligand NA 0
     Addions ligand CL 0
     #Addions ligand NA 1
     #Addions ligand CL 1
-    solvateOct ligand TIP3PBOX 12.0
+    #solvateOct ligand TIP3PBOX 12.0
+    solvateBox ligand TIP3PBOX 12.0
 
     savepdb ligand ligand_vdw_bonded.pdb
     saveamberparm ligand ligand_vdw_bonded.parm7 ligand_vdw_bonded.rst7
@@ -194,9 +198,11 @@ def merge_topologies(folder):
     # create complex in solution
     Addions complex NA 0
     Addions complex CL 0
-    Addions complex NA 1
-    Addions complex CL 1
-    solvateOct complex TIP3PBOX 12.0
+    #Addions complex NA 1
+    #Addions complex CL 1
+    #solvateOct complex TIP3PBOX 12.0
+    solvateBox complex TIP3PBOX 12.0
+
     savepdb complex complex_vdw_bonded.pdb
     saveamberparm complex complex_vdw_bonded.parm7 complex_vdw_bonded.rst7
 
@@ -344,8 +350,8 @@ if __name__ == '__main__':
     args = get_args()
     # generate lambdas
     res_num = args.mutation[3:-3]
-    res_wt =  args.mutation[-3:]
-    res_mut = args.mutation[:3]
+    res_wt =  args.mutation[:3]
+    res_mut = args.mutation[-3:]
     windows = np.arange(0,1+args.increment,args.increment)
     # Create Folders  & copy data
     MAIN = './MUTATION/' +  args.mutation
@@ -385,7 +391,7 @@ if __name__ == '__main__':
                 print('masks empty')
                 raise ValueError
             if len(masks['scmask']) != 2 or len(masks['timask']) != 2:
-                print('masks empty')
+                print('masks incomplete')
                 print(masks)
                 raise ValueError
 

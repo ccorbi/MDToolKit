@@ -22,16 +22,16 @@ AmberProtocols = GEN_INPUT
 #
 #         self.clambas = clambdas
 #         self.maks
-def compile_mask(pos, l):
+def compile_mask(pos, l, mask):
 
    #timask1 = ':99', timask2 = ':163',
    #scmask1 = ':99', scmask2 = ':163',
-    mask = defaultdict(list)
+    #mask = defaultdict(list)
     # mask assuming Ligand are first in the pdb
-    mask['timask'].append('''timask1=':{}', '''.format(pos))
-    mask['timask'].append('''timask2=':{}', '''.format(l+1))
-    mask['scmask'].append('''scmask1=':{}', '''.format(pos))
-    mask['scmask'].append('''scmask2=':{}', '''.format(l+1))
+    #mask['timask'].append('''timask1=':{}', '''.format(pos))
+    #mask['timask'].append('''timask2=':{}', '''.format(l+1))
+    mask['scmask'].append('''scmask1=':{}& !@CA,C,O,N,CB,H,HA', '''.format(pos))
+    mask['scmask'].append('''scmask2=':{}& !@CA,C,O,N,CB,H,HA', '''.format(l+1))
 
 
     return mask
@@ -190,7 +190,7 @@ def mutate(res, resid, chain, mutatation, template, output):
                 print(line.rstrip(), file=output)
                 continue
 
-            if atom_data['res_type'] == res  and atom_data['res_num'] == resid:
+            if atom_data['res_type'] == res  and atom_data['res_num'] == int(resid):
                 if  atom_data['atom_type'] in backbone:
                     line = line.replace(res, mutatation)
                     # save
@@ -223,27 +223,33 @@ def merge_topologies(folder):
     ligand = combine {m1 m2}
     complex = combine {m1 m2 target}
 
+    # do not recenter coordinates
+    set default nocenter on
+
 
     # create ligand in solution
     Addions ligand NA 0
     Addions ligand CL 0
+
     #Addions ligand NA 1
     #Addions ligand CL 1
-    solvateOct ligand TIP3PBOX 14.0
-    setbox ligand vdw
+    #solvateOct ligand TIP3PBOX 14.0
+    #setbox ligand vdw
 
+    solvateBox ligand TIP3PBOX 12.0
     savepdb ligand ligand.pdb
     saveamberparm ligand ligand.parm7 ligand.rst7
 
     # create complex in solution
     Addions complex NA 0
     Addions complex CL 0
-    Addions complex NA 1
-    Addions complex CL 1
 
+    #Addions complex NA 1
+    #Addions complex CL 1
+    #solvateOct complex TIP3PBOX 14.0
+    #setbox complex vdw
 
-    solvateOct complex TIP3PBOX 14.0
-    setbox complex vdw
+    solvateBox complex TIP3PBOX 12.0
     savepdb complex complex.pdb
     saveamberparm complex complex.parm7 complex.rst7
 
@@ -268,7 +274,7 @@ def run_parmed(folder, resid, len_lig, system):
                     tiMerge :1-{} :{}-{} :{} :{}
                     outparm merged_{system}.parm7 merged_{system}.rst7
                     outpdb merged_{system}.pdb
-                    quit""".format(len_lig, len_lig + 1, len_lig*2, resid, resid+len_lig, system=system)
+                    quit""".format(len_lig, len_lig + 1, len_lig*2, resid, int(resid)+len_lig, system=system)
     print(ligan_parm, file=open(folder+'/{}.parmed'.format(system),'w') )
 
     process = subprocess.Popen('parmed {0}.parm7 -i {0}.parmed'.format(system).split(), cwd=folder, stdout=subprocess.PIPE)
@@ -287,8 +293,8 @@ def parse_masks_parmed(output):
     for line in s.split('\n'):
         if line.startswith('timask'):
             mask['timask'].append(line.strip())
-        if line.startswith('scmask'):
-            mask['scmask'].append(line.strip())
+        #if line.startswith('scmask'):
+            #mask['scmask'].append(line.strip())
 
 
     return mask
@@ -342,8 +348,8 @@ if __name__ == '__main__':
     args = get_args()
     # generate lambdas
     res_num = args.mutation[3:-3]
-    res_wt =  args.mutation[-3:]
-    res_mut = args.mutation[:3]
+    res_wt =  args.mutation[:3]
+    res_mut = args.mutation[-3:]
     windows = np.arange(0,1+args.increment,args.increment)
     # Create Folders  & copy data
     MAIN = './MUTATION/' +  args.mutation
@@ -367,7 +373,9 @@ if __name__ == '__main__':
     for s in systems:
         masks = run_parmed(MAIN, res_num, len(residues), s)
 
-    masks = compile_mask(res_num, len(residues))
+    #print(masks)
+    masks = compile_mask(res_num, len(residues), masks)
+
     # create amber scripts
     for s in systems:
         create_amber_scripts(MAIN, s, windows, masks, increment=args.increment, msteps=args.msteps, hsteps=args.hsteps, psteps=args.psteps)
