@@ -30,8 +30,8 @@ def compile_mask(pos, l, mask):
     # mask assuming Ligand are first in the pdb
     #mask['timask'].append('''timask1=':{}', '''.format(pos))
     #mask['timask'].append('''timask2=':{}', '''.format(l+1))
-    mask['scmask'].append('''scmask1=':{}& !@CA,C,O,N,CB,H,HA', '''.format(pos))
-    mask['scmask'].append('''scmask2=':{}& !@CA,C,O,N,CB,H,HA', '''.format(l+1))
+    mask['scmask'].append('''scmask1=':{}& !@CA,C,O,N,H,HA', '''.format(pos)) #CB
+    mask['scmask'].append('''scmask2=':{}& !@CA,C,O,N,H,HA', '''.format(l+1)) #CB
 
 
     return mask
@@ -160,7 +160,7 @@ def mutate(res, resid, chain, mutatation, template, output):
 
     """
     residues = dict()
-    backbone = ['C','O', 'N', 'CA', 'CB', 'H', 'HA']
+    backbone = ['C','O', 'N', 'CA',  'H', 'HA'] # CB
     with open(template,'r') as input_file:
         for line in input_file:
             if line.startswith('ATOM') or line.startswith('HETATM'):
