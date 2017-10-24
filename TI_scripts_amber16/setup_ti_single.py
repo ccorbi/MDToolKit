@@ -22,7 +22,9 @@ AmberProtocols = GEN_INPUT
 #
 #         self.clambas = clambdas
 #         self.maks
-def compile_mask(pos, l, mask):
+def compile_mask(pos, l, mask, ignore):
+
+
 
    #timask1 = ':99', timask2 = ':163',
    #scmask1 = ':99', scmask2 = ':163',
@@ -30,8 +32,8 @@ def compile_mask(pos, l, mask):
     # mask assuming Ligand are first in the pdb
     #mask['timask'].append('''timask1=':{}', '''.format(pos))
     #mask['timask'].append('''timask2=':{}', '''.format(l+1))
-    mask['scmask'].append('''scmask1=':{}& !@CA,C,O,N,H,HA', '''.format(pos)) #CB
-    mask['scmask'].append('''scmask2=':{}& !@CA,C,O,N,H,HA', '''.format(l+1)) #CB
+    mask['scmask'].append('''scmask1=':{} {}', '''.format(pos, ignore)) #CB
+    mask['scmask'].append('''scmask2=':{} {}', '''.format(l+1, ignore)) #CB
 
 
     return mask
@@ -149,7 +151,7 @@ def create_amber_scripts(folder, system, clambdas, masks, increment, msteps=2000
 #     return protocol
 
 
-def mutate(res, resid, chain, mutatation, template, output):
+def mutate(res, resid, chain, mutatation, template, output, fix_atoms):
     """Quick and diry mutation function. TODO change to biopython or something much robust.
 
     Parameters
@@ -160,7 +162,9 @@ def mutate(res, resid, chain, mutatation, template, output):
 
     """
     residues = dict()
-    backbone = ['C','O', 'N', 'CA',  'H', 'HA'] # CB
+
+
+
     with open(template,'r') as input_file:
         for line in input_file:
             if line.startswith('ATOM') or line.startswith('HETATM'):
@@ -191,7 +195,7 @@ def mutate(res, resid, chain, mutatation, template, output):
                 continue
 
             if atom_data['res_type'] == res  and atom_data['res_num'] == int(resid):
-                if  atom_data['atom_type'] in backbone:
+                if  atom_data['atom_type'] in fix_atoms:
                     line = line.replace(res, mutatation)
                     # save
                     print(line.rstrip(), file=output)
@@ -282,7 +286,7 @@ def run_parmed(folder, resid, len_lig, system):
     out = process.communicate()
     # both process return same mask
     masks = parse_masks_parmed(out)
-
+    # print(out)
     return masks
 
 def parse_masks_parmed(output):
@@ -336,6 +340,7 @@ def get_args():
     parser.add_argument("--mutation", type=str )
     parser.add_argument("--target", type=str )
     parser.add_argument("--increment", type=float, default=.1 )
+    parser.add_argument("--scmask-ignore", type=str, default='CA,C,O,N,HA,H1,H2,H3,H', dest='scmask_ignore' )
     parser.add_argument("--msteps", type=int,default=4000 )
     parser.add_argument("--hsteps", type=int,default=5000 )
     parser.add_argument("--psteps", type=int,default=2500000 )
@@ -359,12 +364,25 @@ if __name__ == '__main__':
     systems = [LIG, COM]
 
 
+
+    fix_atoms = args.scmask_ignore.split(',')
+    mask_ignore =  '& !@' + args.scmask_ignore
+
+    if 'PRO' in args.mutation:
+        if 'H' in fix_atoms:
+            print('remove H from the seconday mask')
+            print('CA,C,O,N,HA,H1,H2,H3,OXT')
+            raise ValueError
+
+
+
+
     create_folders_tree(MAIN, LIG, COM, windows)
     shutil.copy(args.ligand, MAIN+'/lig.pdb' )
     shutil.copy(args.target, MAIN+'/trgt.pdb' )
     # Simple MUTATION
     mut_ligand = open(MAIN+'/mut_lig.pdb','w')
-    residues = mutate(res_wt, res_num, args.chain, res_mut, MAIN+'/lig.pdb', mut_ligand)
+    residues = mutate(res_wt, res_num, args.chain, res_mut, MAIN+'/lig.pdb', mut_ligand, fix_atoms)
     mut_ligand.close()
     # merge tleap
     merge_topologies(MAIN)
@@ -374,7 +392,11 @@ if __name__ == '__main__':
         masks = run_parmed(MAIN, res_num, len(residues), s)
 
     #print(masks)
-    masks = compile_mask(res_num, len(residues), masks)
+
+
+
+    masks = compile_mask(res_num, len(residues), masks, mask_ignore)
+
 
     # create amber scripts
     for s in systems:
@@ -384,4 +406,4 @@ if __name__ == '__main__':
             shutil.copy(MAIN+'/merged_{}.rst7'.format(s), MAIN+'/{}/{:.3f}/ti.rst7'.format(s,w) )
 
 
-    # create restart script
+# create restart script
