@@ -39,11 +39,6 @@ def plot_lambda(dvdl, clambda, state):
     plt.close(fig)
 
 
-def movingaverage(interval, window_size):
-    window= np.ones(int(window_size))/float(window_size)
-    return np.convolve(interval, window, 'same')
-
-
 # parse energy output
 def parse_energyOut(file_name):
     dVdl = list()
@@ -74,20 +69,15 @@ def get_integration(df):
     return integration
 
 
-def parse_TIout(folders,labels ,preprocess_dvdl, SKIP, LIMIT):
+def parse_DVDL_out(folders,labels ,preprocess_dvdl, SKIP, LIMIT, IGNORE):
 
     # Parse TI output
-    # p_H_data = list()
-    # for state in STATES:
-    #     for step in STEPS:
-    #         folders = glob.glob('./'+state+'/'+step+'/*')
-    #labels is a list, wih state and step or only state
 
     raw_dvdl = defaultdict(list)
     # for lamdba
     for clambda in folders:
         l = os.path.basename(os.path.normpath(clambda))
-        if islambdafolder(l):
+        if islambdafolder(l) and l != IGNORE :
             energy_files = glob.glob(clambda+'/ti*.en')
             energy_files.sort()
 
@@ -132,11 +122,10 @@ def get_args():
     ## todo simplify mutations to X#X
     parser = argparse.ArgumentParser()
     parser.add_argument("--extrapol", type=bool, default=True)
-    parser.add_argument("--ignore", type=str, default=.1 )
+    parser.add_argument("--ignore", type=str, default=None )
     parser.add_argument("--skip", type=int,default=500 )
     parser.add_argument("--limit", default=None )
-    parser.add_argument("--psteps", type=int,default=2500000 )
-    #parser.set_defaults(nice=False)
+
     args = parser.parse_args()
     return args
 
@@ -153,10 +142,15 @@ if __name__ == '__main__':
 
     ## CONSTANTS
     STATES = ['complex', 'ligand']
-    #STEPS = ['decharge','vdw_bonded', 'recharge']
+
+    # step-lambda format# ex. complex-0.100
+    if args.ignore:
+        ignore_state, ignore_lambda = args.ignore.split('-')
+    else:
+        ignore_state = None
+        ignore_lambda = None
 
     # make folder
-
     create_folder('./analysis')
     create_folder('./analysis/lambdas')
     create_folder('./analysis/rmsd')
@@ -164,11 +158,16 @@ if __name__ == '__main__':
     # Parse TI output
     preprocess_dvdl = list()
     for state in STATES:
-        #for step in STEPS:
+        # setup ignore
+        if ignore_state == state:
+            ignore = ignore_lambda
+        else:
+            ignore = ''
 
-            folders = glob.glob('./'+state+'/*')
-            labels=[state]
-            parse_TIout(folders, labels , preprocess_dvdl, SKIP, LIMIT)
+        # get lamdba folders
+        folders = glob.glob('./'+state+'/*')
+        labels=[state]
+        parse_DVDL_out(folders, labels , preprocess_dvdl, SKIP, LIMIT, ignore)
 
 
     df = pd.DataFrame(preprocess_dvdl, columns=['state' ,'Lambda','DVDL', 'rms'])
@@ -233,7 +232,7 @@ if __name__ == '__main__':
 
 
 
-
+    # run it through pytraj
     # Plot RMSD
     for state in STATES:
         folders = glob.glob('./'+state+'/*')

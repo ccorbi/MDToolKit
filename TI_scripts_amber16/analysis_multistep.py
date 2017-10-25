@@ -18,10 +18,8 @@ def plot_rmsd(data, clambda, state):
     fig, ax =  plt.subplots()
 
     ax.scatter(data['#Frame'], data['RMSD_00000'], alpha=.2)
-    #y_av = movingaverage(dvdl, 200)
-    #ax.plot(range(len(dvdl)), y_av,"r")
     ax.set_title(clambda+ ' '+ state)
-    fig.savefig('./analysis/rmsd_{}_{}.png'.format(state,clambda ))
+    fig.savefig('./analysis/rmsd/rmsd_{}_{}.png'.format(state,clambda ))
 
 
 def plot_lambda(dvdl, clambda, state):
@@ -35,13 +33,8 @@ def plot_lambda(dvdl, clambda, state):
 
     ax.plot(range(df.shape[0]), df['acc_dvdl'], "r")
     ax.set_title(clambda)
-    fig.savefig('./analysis/{}_{}.png'.format(state,clambda ))
+    fig.savefig('./analysis/lambdas/{}_{}.png'.format(state,clambda ))
     plt.close(fig)
-
-
-def movingaverage(interval, window_size):
-    window= np.ones(int(window_size))/float(window_size)
-    return np.convolve(interval, window, 'same')
 
 
 # parse energy output
@@ -74,20 +67,15 @@ def get_integration(df):
     return integration
 
 
-def parse_TIout(folders,labels ,preprocess_dvdl, SKIP, LIMIT):
+def parse_DVDL_out(folders,labels ,preprocess_dvdl, SKIP, LIMIT, IGNORE):
 
     # Parse TI output
-    # p_H_data = list()
-    # for state in STATES:
-    #     for step in STEPS:
-    #         folders = glob.glob('./'+state+'/'+step+'/*')
-    #labels is a list, wih state and step or only state
 
     raw_dvdl = defaultdict(list)
     # for lamdba
     for clambda in folders:
         l = os.path.basename(os.path.normpath(clambda))
-        if islambdafolder(l):
+        if islambdafolder(l) and l != IGNORE :
             energy_files = glob.glob(clambda+'/ti*.en')
             energy_files.sort()
 
@@ -102,6 +90,14 @@ def parse_TIout(folders,labels ,preprocess_dvdl, SKIP, LIMIT):
                     data = np.asarray(raw_dvdl[l])
                     preprocess_dvdl.append(labels+[float(l),data[SKIP:LIMIT].mean(), data[SKIP:LIMIT].std()])
 
+
+def create_folder(folder):
+    '''This only to keep compability with py27, no if_exist'''
+
+    try:
+        os.makedirs(folder)
+    except:
+        pass
 
 ################
 ################
@@ -124,10 +120,10 @@ def get_args():
     ## todo simplify mutations to X#X
     parser = argparse.ArgumentParser()
     parser.add_argument("--extrapol", type=bool, default=True)
-    parser.add_argument("--ignore", type=str, default=.1 )
+    parser.add_argument("--ignore", type=str, default=None )
     parser.add_argument("--skip", type=int,default=500 )
     parser.add_argument("--limit", default=None )
-    parser.add_argument("--psteps", type=int,default=2500000 )
+    # parser.add_argument("--psteps", type=int,default=2500000 )
     #parser.set_defaults(nice=False)
     args = parser.parse_args()
     return args
@@ -147,20 +143,31 @@ if __name__ == '__main__':
     STATES = ['complex', 'ligand']
     STEPS = ['decharge','vdw_bonded', 'recharge']
 
+    # step-lambda format# ex. complex-vdw_bonded-0.100
+    if args.ignore:
+        ignore_state, ignore_step, ignore_lambda = args.ignore.split('-')
+    else:
+        ignore_state = None
+        ignore_lambda = None
+
     # make folder
-    try:
-        os.makedirs('./analysis')
-    except:
-        pass
+    create_folder('./analysis')
+    create_folder('./analysis/lambdas')
+    create_folder('./analysis/rmsd')
 
     # Parse TI output
     preprocess_dvdl = list()
     for state in STATES:
         for step in STEPS:
-
+            # setup ignore
+            if ignore_state == state and ignore_step == step:
+                ignore = ignore_lambda
+            else:
+                ignore = ''
+            # get lambda folders
             folders = glob.glob('./'+state+'/'+step+'/*')
             labels=[state, step]
-            parse_TIout(folders, labels , preprocess_dvdl, SKIP, LIMIT)
+            parse_DVDL_out(folders, labels , preprocess_dvdl, SKIP, LIMIT, ignore)
 
 
     df = pd.DataFrame(preprocess_dvdl, columns=['state','step' ,'Lambda','DVDL', 'rms'])
@@ -190,7 +197,7 @@ if __name__ == '__main__':
     # save lambdas
     df.to_csv('./analysis/dvdldata.csv', index=False)
 
-
+    delta = open('./analysis/delta.out', 'w')
     final = dict()
     fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(18,10))
     for idx,state in enumerate(STATES):
@@ -205,7 +212,9 @@ if __name__ == '__main__':
             ax[idx][idj].errorbar(report['Lambda'], report['DVDL'], yerr=report['rms'])
             ax[idx][idj].set_title(state+'_'+step)
 
-        print('dG sum for {}  \t\t {:.6f}'.format(state,sum(i)))
+        print('dG sum for {}:  \t\t {:.6f}'.format(state,sum(i)))
+        print('dG sum for {}:  \t\t {:.6f}'.format(state,sum(i)), file=delta)
+
         print('-'*30)
         print('\n')
         final[state] = sum(i)
@@ -213,6 +222,7 @@ if __name__ == '__main__':
     print('#'*30)
     # ΔGcomplex - ΔGligands
     print('final ddG binding: \t\t {:.6f}'.format( final['complex']-final['ligand']))
+    print('final ddG binding: \t\t {:.6f}'.format( final['complex']-final['ligand']), file= delta)
 
     fig.savefig('./analysis/plot_{}.png'.format('integration'))
 
