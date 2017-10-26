@@ -228,7 +228,7 @@ def get_args():
                         default=False, dest='decouple_mask')
     parser.add_argument("--psteps", type=int, default=2500000)
     parser.add_argument("--ouput-folder", type=str,
-                        default='MUTATION', dest='ouput_folder')
+                        default='MUTATION', dest='output_folder')
     # parser.set_defaults(nice=False)
     args = parser.parse_args()
     return args
