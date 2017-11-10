@@ -124,7 +124,7 @@ GEN_INPUT = {'1-min':"""&cntrl
                             ntc = 2, ntf = 1,
                             ntb = 1,
                             barostat = 2,
-                            ioutfm = 1, iwrap = 0,
+                            ioutfm = 1, iwrap = 1,
                             ntwe = 1000, ntwx = 1000, ntpr = 1000, ntwr = 1000,
 
                             nmropt = 1,
@@ -153,7 +153,7 @@ GEN_INPUT = {'1-min':"""&cntrl
                         ntc = 2, ntf = 1,
                         ntb = 2,
                         ntp = 1, pres0 = 1.0, taup = 2.0,
-                        ioutfm = 1, iwrap = 0,
+                        ioutfm = 1, iwrap = 1,
                         ntwe = 1000, ntwx = 1000, ntpr = 1000, ntwr = 1000,
 
                         icfe = 1, ifsc = 1, clambda = {clambda:.3f}, scalpha = 0.5, scbeta = 12.0,
@@ -177,7 +177,7 @@ GEN_INPUT = {'1-min':"""&cntrl
                         ntc = 2, ntf = 1,
                         ntb = 2,
                         ntp = 1, pres0 = 1.0, taup = 2.0,
-                        ioutfm = 1, iwrap = 0,
+                        ioutfm = 1, iwrap = 1,
                         ntwe = 1000, ntwx = 10000, ntpr = 10000, ntwr = 10000,
 
                         icfe = 1, ifsc = 1, clambda = {clambda:.3f}, scalpha = 0.5, scbeta = 12.0,
