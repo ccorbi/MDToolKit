@@ -106,19 +106,26 @@ def extrapolation(df, STATES):
         if d[d['Lambda'] == 0.0].empty:
             
             print("WARNING: Lambda 0 on {}, empty, data point will be interpolated".format(state))
-            
-            l0 = ((d.iloc[0]['Lambda']*d.iloc[1]['DVDL'])-(d.iloc[1]['Lambda']*d.iloc[0]['DVDL']))/(d.iloc[0]['Lambda']-d.iloc[1]['Lambda'])
-            t = pd.DataFrame([[state,0.00,l0,0.00]], columns=['state','Lambda','DVDL', 'rms'])
-            df = df.append(t)
+            try:
+                l0 = ((d.iloc[0]['Lambda']*d.iloc[1]['DVDL'])-(d.iloc[1]['Lambda']*d.iloc[0]['DVDL']))/(d.iloc[0]['Lambda']-d.iloc[1]['Lambda'])
+                t = pd.DataFrame([[state,0.00,l0,0.00]], columns=['state','Lambda','DVDL', 'rms'])
+                df = df.append(t)
+            except:
+                print('Error on the interpolation...most like  missing point')
 
         if d[d['Lambda'] == 1.0].empty:
 
             print("WARNING: Lambda 1 on {}, empty, data point will be interpolated".format(state))
             
-            x = ((d.iloc[-2]['Lambda']-1.0)*d.iloc[-1]['DVDL'])+((1.0-d.iloc[-1]['Lambda'])*d.iloc[-2]['DVDL'])
-            y = (d.iloc[-2]['Lambda']-d.iloc[-1]['Lambda'])
-            t = pd.DataFrame([[state,1.00,x/y,0.00]], columns=['state', 'Lambda','DVDL', 'rms'])
-            df = df.append(t)  
+            try:
+                x = ((d.iloc[-2]['Lambda']-1.0)*d.iloc[-1]['DVDL'])+((1.0-d.iloc[-1]['Lambda'])*d.iloc[-2]['DVDL'])
+                y = (d.iloc[-2]['Lambda']-d.iloc[-1]['Lambda'])
+                t = pd.DataFrame([[state,1.00,x/y,0.00]], columns=['state', 'Lambda','DVDL', 'rms'])
+                df = df.append(t)  
+            except:                
+                print('Error on the interpolation...most like  missing point')
+
+
 
     return df
 
