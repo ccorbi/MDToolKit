@@ -16,25 +16,41 @@ from scipy.integrate import simps, trapz
 import pytraj as pt
 warnings.filterwarnings("ignore")
 
-def plot_rmsd(traj, clambda, state):
+
+def get_rmsd(traj_path):
+
+    traj = load_traj(traj_path)
+    rmsd = pt.rmsd(traj, ref=0, mask='@CA,C,N')
+
+    df_rmsd = pd.DataFrame(rmsd, columns=['RMSD'])
+
+    return df_rmsd
+
+
+def load_traj(traj_path):
+    
+    traj = pt.iterload(clambda+'/ti.*.nc', top=clambda+'/ti.parm7', frame_slice=(0,-1),)
+    traj.autoimage()
+    traj.superpose()
+
+    return traj
+
+
+def plot_rmsd(rmsd, clambda, state):
 
     fig, ax =  plt.subplots()
-    text = '''autoimage
-    rms first @CA''' 
-    s = pt.load_batch(traj, text)
-    s.run()
 
-    df = pd.DataFrame(s.data['RMSD_00001'].to_ndarray(), columns=['RMSD'])
-    df['acc_RMSD'] = df.expanding(2).mean()
+    rmsd['acc_RMSD'] = rmsd.expanding(2).mean()
     ax.set_ylim(0,3)
-    ax.plot(df['RMSD'])
-    ax.plot(range(df.shape[0]), df['acc_RMSD'], "r")
+    ax.plot(rmsd['RMSD'])
+    ax.plot(range(rmsd.shape[0]), rmsd['acc_RMSD'], "r")
     #y_av = movingaverage(dvdl, 200)
     #ax.plot(range(len(dvdl)), y_av,"r")
     ax.set_title(clambda+ ' '+ state)
     fig.savefig('./analysis/rmsd/rmsd_{}_{}.png'.format(state,clambda ))
+    plt.close(fig)
 
-    return df
+    return 
 
 
 def plot_lambda(dvdl, clambda, state):
@@ -306,7 +322,9 @@ if __name__ == '__main__':
             for clambda in folders:
 
                 #if os.path.isfile(clambda+'/rmsd_bb.1.dat'):
-                traj = pt.iterload(clambda+'/ti.*.nc', top=clambda+'/ti.parm7', frame_slice=(0,-1),)
+                rmsd = get_rmsd(clambda)
                 s = os.path.basename(os.path.normpath(clambda))
-                data = plot_rmsd(traj ,s, state)
-                data.to_csv('./analysis/rmsd/{}_{}.csv'.format(s,state))
+                plot_rmsd(rmsd ,s, state)
+                rmsd.to_csv('./analysis/rmsd/{}_{}.csv'.format(s,state))
+
+
