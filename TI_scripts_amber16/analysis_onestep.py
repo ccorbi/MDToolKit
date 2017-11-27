@@ -17,14 +17,19 @@ import pytraj as pt
 warnings.filterwarnings("ignore")
 
 
-def get_rmsd(traj_path):
+
+
+def get_rms(traj_path):
 
     traj = load_traj(traj_path)
+
     rmsd = pt.rmsd(traj, ref=0, mask='@CA,C,N')
-
     df_rmsd = pd.DataFrame(rmsd, columns=['RMSD'])
+    
+    rmsf = pt.rmsf(traj)
+    df_rmsf = pd.DataFrame(rmsf, columns=['ATOM','RMSF'])
 
-    return df_rmsd
+    return df_rmsd, df_rmsf
 
 
 def load_traj(traj_path):
@@ -51,6 +56,7 @@ def plot_rmsd(rmsd, clambda, state):
     plt.close(fig)
 
     return 
+
 
 
 def plot_lambda(dvdl, clambda, state):
@@ -271,6 +277,7 @@ def get_args():
     parser.add_argument("--skip", type=int, default=0, help='skip # of step to calculate the average on each lambda, 500 or 1ns recommended value, default = 0' )
     parser.add_argument("--limit",  default=None, help='limit on the  # of step to calculate the average dvdl for each lambda, default until the end'  )
     parser.add_argument("--no-plot", default=False, dest='no_plot', action='store_true', help='do not generate plots, only the ddg' )
+    parser.add_argument("--no-rms", default=False, dest='no_rms', action='store_true', help='do not generate RMSD  and RMSF data' )
 
     args = parser.parse_args()
     return args
@@ -289,7 +296,8 @@ if __name__ == '__main__':
     create_folder('./analysis')
     if not args.no_plot:
         create_folder('./analysis/lambdas')
-        create_folder('./analysis/rmsd')
+        create_folder('./analysis/rms')
+        create_folder('./analysis/rms/data')
 
     # Parse TI output
     df = parse_TI(STATES, args)
@@ -314,7 +322,7 @@ if __name__ == '__main__':
 
     # run it through pytraj
     # Plot RMSD
-    if not args.no_plot:
+    if not args.no_rms:
         for state in STATES:
             folders = glob.glob('./'+state+'/*')
         #     raw_H_data = defaultdict(list)
@@ -322,9 +330,10 @@ if __name__ == '__main__':
             for clambda in folders:
 
                 #if os.path.isfile(clambda+'/rmsd_bb.1.dat'):
-                rmsd = get_rmsd(clambda)
+                rmsd, rmsf = get_rms(clambda)
                 s = os.path.basename(os.path.normpath(clambda))
-                plot_rmsd(rmsd ,s, state)
-                rmsd.to_csv('./analysis/rmsd/{}_{}.csv'.format(s,state))
 
-
+                rmsd.to_csv('./analysis/rms/data/rmsd_{}_{}.csv'.format(s,state))
+                rmsf.to_csv('./analysis/rms/data/rmsf_{}_{}.csv'.format(s,state))
+                if not args.no_plot:
+                    plot_rmsd(rmsd ,s, state)
