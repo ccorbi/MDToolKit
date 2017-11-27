@@ -178,7 +178,7 @@ GEN_INPUT = {'1-min':"""&cntrl
                         ntb = 2,
                         ntp = 1, pres0 = 1.0, taup = 2.0,
                         ioutfm = 1, iwrap = 1,
-                        ntwe = 1000, ntwx = 10000, ntpr = 10000, ntwr = 10000,
+                        ntwe = 1000, ntwx = 50000, ntpr = 10000, ntwr = 10000,
 
                         icfe = 1, ifsc = 1, clambda = {clambda:.3f}, scalpha = 0.5, scbeta = 12.0,
                         logdvdl = 1,

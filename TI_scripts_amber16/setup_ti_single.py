@@ -190,6 +190,25 @@ def parse_masks_parmed(output):
     return mask
 
 
+def check_masks(masks):
+
+    if len(masks) <2:
+        print('Error masking')
+        print(masks)
+        sys.exit(1)
+    try:
+        for m in ['timask', 'scmask']:
+            if len(masks[m]) <2:
+                print('Error masking')
+                print(masks)
+                sys.exit(1)
+    except:
+        print('Error masking')
+        print(masks)
+        sys.exit(1)
+    
+    return
+
 def create_folders_tree(MAIN, LIG, COM, clambdas):
 
     mkdir(MAIN + '/' + LIG)
@@ -282,6 +301,8 @@ if __name__ == '__main__':
 
     # build masking
     masks = compile_mask(res_num, len(residues), masks, mask_ignore)
+    check_masks(masks)
+
 
     # create amber scripts
     for s in systems:

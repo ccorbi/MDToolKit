@@ -13,18 +13,28 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from scipy.integrate import simps, trapz
-
+import pytraj as pt
 warnings.filterwarnings("ignore")
 
-def plot_rmsd(data, clambda, state):
+def plot_rmsd(traj, clambda, state):
 
     fig, ax =  plt.subplots()
+    text = '''autoimage
+    rms first @CA''' 
+    s = pt.load_batch(traj, text)
+    s.run()
 
-    ax.scatter(data['#Frame'], data['RMSD_00000'], alpha=.2)
+    df = pd.DataFrame(s.data['RMSD_00001'].to_ndarray(), columns=['RMSD'])
+    df['acc_RMSD'] = df.expanding(2).mean()
+    ax.set_ylim(0,3)
+    ax.plot(df['RMSD'])
+    ax.plot(range(df.shape[0]), df['acc_RMSD'], "r")
     #y_av = movingaverage(dvdl, 200)
     #ax.plot(range(len(dvdl)), y_av,"r")
     ax.set_title(clambda+ ' '+ state)
     fig.savefig('./analysis/rmsd/rmsd_{}_{}.png'.format(state,clambda ))
+
+    return df
 
 
 def plot_lambda(dvdl, clambda, state):
@@ -182,6 +192,7 @@ def parse_TI(STATES, args):
 
     # step-lambda format# ex. complex-0.100
     if args.ignore:
+        #for ign_point in args.ignore
         ignore_state, ignore_lambda = args.ignore.split('-')
     else:
         ignore_state = None
@@ -199,6 +210,7 @@ def parse_TI(STATES, args):
         # get lamdba folders
         folders = glob.glob('./'+state+'/*')
         labels=[state]
+        # Parse TI output
         parse_DVDL_MD(folders, labels , preprocess_dvdl, skip=args.skip, limit=LIMIT, ignore=IGNORE, no_plot=args.no_plot)
 
 
@@ -286,12 +298,15 @@ if __name__ == '__main__':
 
     # run it through pytraj
     # Plot RMSD
-    for state in STATES:
-        folders = glob.glob('./'+state+'/*')
-        raw_H_data = defaultdict(list)
+    if not args.no_plot:
+        for state in STATES:
+            folders = glob.glob('./'+state+'/*')
+        #     raw_H_data = defaultdict(list)
 
-        for clambda in folders:
-            if os.path.isfile(clambda+'/rmsd_bb.1.dat'):
-                l = pd.read_csv(clambda+'/rmsd_bb.1.dat', delim_whitespace=True)
+            for clambda in folders:
+
+                #if os.path.isfile(clambda+'/rmsd_bb.1.dat'):
+                traj = pt.iterload(clambda+'/ti.*.nc', top=clambda+'/ti.parm7', frame_slice=(0,-1),)
                 s = os.path.basename(os.path.normpath(clambda))
-                plot_rmsd(l,s, state)
+                data = plot_rmsd(traj ,s, state)
+                data.to_csv('./analysis/rmsd/{}_{}.csv'.format(s,state))
