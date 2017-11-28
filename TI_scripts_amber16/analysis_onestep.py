@@ -46,13 +46,17 @@ def plot_rmsd(rmsd, clambda, state):
     fig, ax =  plt.subplots()
 
     rmsd['acc_RMSD'] = rmsd.expanding(2).mean()
-    ax.set_ylim(0,3)
+    # free peptides trend to show higher  rmsd
+    if state == 'ligand':
+        ax.set_ylim(0,6)    
+    else:
+        ax.set_ylim(0,3)
     ax.plot(rmsd['RMSD'])
     ax.plot(range(rmsd.shape[0]), rmsd['acc_RMSD'], "r")
     #y_av = movingaverage(dvdl, 200)
     #ax.plot(range(len(dvdl)), y_av,"r")
     ax.set_title(clambda+ ' '+ state)
-    fig.savefig('./analysis/rmsd/rmsd_{}_{}.png'.format(state,clambda ))
+    fig.savefig('./analysis/rms/rmsd_{}_{}.png'.format(state,clambda ))
     plt.close(fig)
 
     return 
@@ -111,7 +115,7 @@ def parse_DVDL_MD(folders,labels ,preprocess_dvdl, skip, limit, ignore, no_plot)
     # for lamdba
     for clambda in folders:
         l = os.path.basename(os.path.normpath(clambda))
-        if islambdafolder(l) and l != ignore :
+        if islambdafolder(l) and l not in ignore :
             energy_files = glob.glob(clambda+'/ti*.en')
             energy_files.sort()
 
@@ -199,6 +203,18 @@ def plot_integration(df, STATES, output_file):
     fig.savefig(output_file)
     plt.close(fig)
 
+
+
+def read_ignore_lambdas(args):
+
+    ignore = defaultdict(list)
+    for ignore_point in args:
+        state, lambdas = ignore_point.split('-')
+        ignore[state].append(lambdas)
+
+    return ignore
+
+
 def parse_TI(STATES, args):
 
     # Arguments
@@ -215,26 +231,25 @@ def parse_TI(STATES, args):
     # step-lambda format# ex. complex-0.100
     if args.ignore:
         #for ign_point in args.ignore
-        ignore_state, ignore_lambda = args.ignore.split('-')
+        ignore_points = read_ignore_lambdas(args.ignore)
     else:
-        ignore_state = None
-        ignore_lambda = None
+        ignore_points = dict()
 
     # Parse TI output
     preprocess_dvdl = list()
     for state in STATES:
         # setup ignore
-        if ignore_state == state:
-            IGNORE = ignore_lambda
+        if state in ignore_points:
+            IGNORE = ignore_points[state]
         else:
-            IGNORE = ''
+            IGNORE = list()
 
         # get lamdba folders
         folders = glob.glob('./'+state+'/*')
         labels=[state]
         # Parse TI output
         parse_DVDL_MD(folders, labels , preprocess_dvdl, skip=args.skip, limit=LIMIT, ignore=IGNORE, no_plot=args.no_plot)
-
+        
 
     df = pd.DataFrame(preprocess_dvdl, columns=['state' ,'Lambda','DVDL', 'rms'])
 
@@ -273,10 +288,10 @@ def get_args():
     ## todo simplify mutations to X#X
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-extrapolation", dest= "extrapol",default=True, action='store_false', help="by default if lambda 0 or 1 is missing the value is extrapolated. this argument disables this behaibour")
-    parser.add_argument("--ignore", type=str, default=None, help="Ignore a lambda, format ->  step-lambda e.g.. complex-0.100 " )
+    parser.add_argument("--ignore", nargs='*', help="Ignore a lambda, format ->  step-lambda e.g.. complex-0.100 " )
     parser.add_argument("--skip", type=int, default=0, help='skip # of step to calculate the average on each lambda, 500 or 1ns recommended value, default = 0' )
     parser.add_argument("--limit",  default=None, help='limit on the  # of step to calculate the average dvdl for each lambda, default until the end'  )
-    parser.add_argument("--no-plot", default=False, dest='no_plot', action='store_true', help='do not generate plots, only the ddg' )
+    parser.add_argument("--no-plots", default=False, dest='no_plot', action='store_true', help='do not generate plots, only the ddg' )
     parser.add_argument("--no-rms", default=False, dest='no_rms', action='store_true', help='do not generate RMSD  and RMSF data' )
 
     args = parser.parse_args()

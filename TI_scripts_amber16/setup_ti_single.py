@@ -242,7 +242,7 @@ def get_args():
     parser.add_argument("--target", type=str)
     parser.add_argument("--increment", type=float, default=.1)
     parser.add_argument("--scmask-ignore", type=str,
-                        default='CA,C,O,N,HA,H1,H2,H3,H', dest='scmask_ignore')
+                        default='CA,C,O,N,HA,H1,H2,H3,H ', dest='scmask_ignore')
     parser.add_argument("--decouple-mask", type=bool,
                         default=False, dest='decouple_mask')
     parser.add_argument("--psteps", type=int, default=2500000)
@@ -279,8 +279,9 @@ if __name__ == '__main__':
 
     if 'PRO' in args.mutation:
         if 'H' in fix_atoms:
-            print('WARNING removing H from the seconday mask')
+            print('WARNING remove H from the secondary mask')
             fix_atoms.remove('H')
+            args.scmask_ignore = args.scmask_ignore.replace(',H ','')
 
     if args.decouple_mask:
         mask_ignore = ''
@@ -295,7 +296,7 @@ if __name__ == '__main__':
     # merge tleap
     merge_topologies(MAIN)
 
-    # run parmed
+    # run parmed 
     for s in systems:
         masks = run_parmed(MAIN, res_num, len(residues), s)
 
