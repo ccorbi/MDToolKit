@@ -5,11 +5,11 @@
 Thermodynamic integration (TI) is a method used to compare the difference in free energy between two given states (e.g., A and B) whose potential energies U A {\displaystyle U_{A}} U_{A} and U B {\displaystyle U_{B}} U_{B} have different dependences on the spatial coordinates. Because the free energy of a system is not simply a function of the phase space coordinates of the system, but is instead a function of the Boltzmann-weighted integral over phase space (i.e. partition function), the free energy difference between two states cannot be calculated directly. In thermodynamic integration, the free energy difference is calculated by defining a thermodynamic path between the states and integrating over ensemble-averaged enthalpy changes along the path. Such paths can either be real chemical processes or alchemical processes. An example alchemical process is the Kirkwood's coupling parameter method.
 
 
-### Scripts Amber 10
+### * Scripts Amber 10
 
 **DEPRICATED**. Scripts to setup, lunch and analyse TI. 
 
-### Scripts Amber 16
+### * Scripts Amber 16
 
 Scripts to setup , lunch and analyse TI.
 
