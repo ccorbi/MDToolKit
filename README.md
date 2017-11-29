@@ -75,7 +75,7 @@ optional arguments:
 
 #### ANALYSIS 
 
-* ANALYSIS
+Recommend to skip the first 500 steps (1 ns) to improve accuracity, however this can be adjusted for noise trajectories. 
 
 ```bash
 
