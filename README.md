@@ -13,6 +13,8 @@ Thermodynamic integration (TI) is a method used to compare the difference in fre
 
 Scripts to setup , lunch and analyse TI.
 
+#### SETUP & LUNCH
+
 * SETUP ONE STEP
 
 ```bash
@@ -70,6 +72,8 @@ optional arguments:
 
 - for beagle: submit_beagle.sh
 - for graham submit_graham.sh
+
+#### ANALYSIS 
 
 * ANALYSIS
 
