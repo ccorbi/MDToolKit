@@ -33,7 +33,8 @@ def get_rms(traj_path):
 
 
 def load_traj(traj_path):
-    
+    ########## TAKE A LOOK HERE THIS WIERD!!!!
+    # clamba do no defined, and in a notebook iterload failded to to this
     traj = pt.iterload(clambda+'/ti.*.nc', top=clambda+'/ti.parm7', frame_slice=(0,-1),)
     traj.autoimage()
     traj.superpose()

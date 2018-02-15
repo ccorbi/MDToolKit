@@ -12,10 +12,10 @@ def plot_rmsd(data,  state):
 
     fig, ax =  plt.subplots()
 
-    ax.scatter(data['#Frame'], data['RMSD_00000'], alpha=.2)
+    ax.scatter(data['Frame'], data['RMSD'], alpha=.2)
 
-    data['acc_rmsd'] = data['RMSD_00000'].expanding(2).mean()
-    ax.plot(data['#Frame'], data['acc_rmsd'], "r")
+    data['acc_rmsd'] = data['RMSD'].expanding(2).mean()
+    ax.plot(data['Frame'], data['acc_rmsd'], "r")
     #y_av = movingaverage(dvdl, 200)
     #ax.plot(range(len(dvdl)), y_av,"r")
     ax.set_ylim(0,4)
@@ -40,7 +40,7 @@ rmsd_file = 'rmsd_bb.1.dat'
 rmsf_file = 'rmsf_bb.1.dat'
 
 if os.path.isfile(rmsd_file):
-    data = pd.read_csv(rmsd_file, delim_whitespace=True)
+    data = pd.read_csv(rmsd_file, delim_whitespace=True, names=['Frame','RMSD'], skiprows=1)
     s = os.path.basename(os.path.normpath('.'))
     plot_rmsd(data, s)
 
