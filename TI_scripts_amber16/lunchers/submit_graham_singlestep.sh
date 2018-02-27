@@ -1,23 +1,24 @@
 #!/bin/sh
-#
 
-windows=$(seq 0.00 0.100 1.0)
+
+# adapt below for each User or enviorment
 amber=/home/ccorbi/amber16
 mdrun=${amber}/bin/pmemd.cuda
 
-#cd complex
+# by default 10 lambdas
+# Adjust the number of lambdas if it is need it
+windows=$(seq 0.00 0.100 1.0)
+
 for status in complex ligand; do
   cd $status
   echo $status
-#  for step in decharge vdw_bonded recharge;do
-#    cd $step
-#    echo $step
     for w in $windows; do
       cd $w
       echo $W
       pwd
 
-  # adapt below for your job scheduler
+
+# adapt below for your job scheduler
 export LD_LIBRARY_PATH=$AMBERHOME/lib:$LD_LIBRARY_PATH
 
 cat << EOF > run.gpusub
@@ -50,7 +51,6 @@ source ${amber}/amber.sh
 
 $mdrun -O -i 1-min.in -c ti.rst7 -ref ti.rst7 -p ti.parm7 -o min.1.out -inf min.1.info -e min.1.en -r min.1.rst7 -l min.log
 $mdrun -O -i 2-min.in -c min.1.rst7  -p ti.parm7 -o min.2.out -inf min.2.info -e min.2.en -r min.2.rst7 -l min.log
-
 $mdrun  -O -i 3-equil.in -o equil.3.out -p ti.parm7 -c min.2.rst7 -r equil.3.rst7 -ref min.2.rst7
 $mdrun  -O -i 4-equil.in -o equil.4.out -p ti.parm7 -c  equil.3.rst7 -r equil.4.rst7 -ref equil.3.rst7
 
@@ -64,7 +64,7 @@ $mdrun -O -i prod.in -o ti.\$N.out -p ti.parm7 -c  ti.\$((\$N-1)).rst7 -x ti.\$N
 done
 EOF
 
-# adapt above for your job scheduler
+# adapt above for your job scheduler & User
 sbatch -A def-pmkim run.gpusub
 
   cd ..

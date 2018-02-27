@@ -19,7 +19,7 @@
  temp0=300, tempi=100,
 
  restraint_wt=25,
-restraintmask=':1-271',
+restraintmask='@CA,C,N,O,CB',
 
 &end
 

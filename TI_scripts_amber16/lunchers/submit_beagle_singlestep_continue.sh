@@ -1,16 +1,18 @@
 #!/bin/sh
 #
-windows=$(seq 0.00 0.050 1.00)
-amber=/usr/local/amber16
+# adapt below for each User or enviorment
+amber=/home/ccorbi/amber16
 mdrun=${amber}/bin/pmemd.cuda
+
+# by default 10 lambdas
+# Adjust the number of lambdas if it is need it
+windows=$(seq 0.00 0.100 1.0)
 
 
 for status in complex ligand; do
   cd $status
   echo $status
-#  for step in decharge vdw_bonded recharge;do
-#    cd $step
-#    echo $step
+
     for w in $windows; do
       cd $w
       echo $W
@@ -57,7 +59,7 @@ export TEMPDIR='/tmp/'
 
 for N in {2..5}
 do
-$mdrun -O -i prod.in -o ti.\$N.out -p ti.parm7 -c  ti.\$((\$N-1)).rst7 -x ti.\$N.mdcrd  -r ti.\$N.rst7 -e ti00\$N.en
+$mdrun -O -i prod.in -o ti.\$N.out -p ti.parm7 -c  ti.\$((\$N-1)).rst7 -x ti.\$N.nc  -r ti.\$N.rst7 -e ti00\$N.en
 done
 
 

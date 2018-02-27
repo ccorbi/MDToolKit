@@ -1,16 +1,21 @@
 #!/bin/sh
 #
-windows=$(seq 0.00 0.050 1.00)
-amber=/usr/local/amber16
+
+# adapt below for each User or enviorment
+amber=/home/ccorbi/amber16
 mdrun=${amber}/bin/pmemd.cuda
+
+# by default 10 lambdas
+# Adjust the number of lambdas if it is need it
+windows=$(seq 0.00 0.100 1.0)
 
 
 for status in complex ligand; do
   cd $status
   echo $status
-#  for step in decharge vdw_bonded recharge;do
-#    cd $step
-#    echo $step
+  for step in decharge vdw_bonded recharge;do
+     cd $step
+     echo $step
     for w in $windows; do
       cd $w
       echo $W
@@ -53,21 +58,23 @@ echo \$CUDA_VISIBLE_DEVICES
 
 export TEMPDIR='/tmp/'
 
-# Run the parallel version of sander, using all 8 cores in the node
+
 $mdrun -O -i 1-min.in -c ti.rst7 -ref ti.rst7 -p ti.parm7 -o min.1.out -inf min.1.info -e min.1.en -r min.1.rst7 -l min.log
 $mdrun -O -i 2-min.in -c min.1.rst7  -p ti.parm7 -o min.2.out -inf min.2.info -e min.2.en -r min.2.rst7 -l min.log
+
 
 $mdrun  -O -i 3-equil.in -o equil.3.out -p ti.parm7 -c min.2.rst7 -r equil.3.rst7 -ref min.2.rst7
 $mdrun  -O -i 4-equil.in -o equil.4.out -p ti.parm7 -c  equil.3.rst7 -r equil.4.rst7 -ref equil.3.rst7
 
 
-$mdrun  -O -i  prod.in -o ti.1.out -p  ti.parm7 -c  equil.4.rst7 -x ti.1.mdcrd  -r ti.1.rst7 -ref equil.4.rst7 -e ti001.en
+$mdrun  -O -i  prod.in -o ti.1.out -p  ti.parm7 -c  equil.4.rst7 -x ti.1.nc  -r ti.1.rst7 -ref equil.4.rst7 -e ti001.en
 
 
 for N in {2..5}
 do
-$mdrun -O -i prod.in -o ti.\$N.out -p ti.parm7 -c  ti.\$((\$N-1)).rst7 -x ti.\$N.mdcrd  -r ti.\$N.rst7 e ti00\$N.en
+$mdrun -O -i prod.in -o ti.\$N.out -p ti.parm7 -c  ti.\$((\$N-1)).rst7 -x ti.\$N.nc  -r ti.\$N.rst7 -e ti00\$N.en
 done
+
 
 EOF
 
@@ -78,3 +85,5 @@ cd ..
 done
     cd ..
     done
+       cd ..
+        done

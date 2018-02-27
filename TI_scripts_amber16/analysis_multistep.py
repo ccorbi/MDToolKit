@@ -1,17 +1,18 @@
+#!/usr/bin/env python
+
 from __future__ import print_function
 import sys
 import os
 from collections import defaultdict
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
 import glob
 import re
 import argparse
 
 from scipy.integrate import trapz, simps
-
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
 def plot_rmsd(data, clambda, state):
 
