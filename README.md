@@ -22,9 +22,9 @@ Collection of scripts to lunch and use analysis of amber Molecular Dynamics.
 To use these scripts, simply copy them into a desired directory and add that directory to your PATH. It is recommended to use these scripts on a Linux system.
 
 
----
 
-# Thermodynamic Integrations Sctipts
+
+# Thermodynamic Integrations Scripts
 
 Thermodynamic integration (TI) is a method used to compare the difference in free energy between two given states (e.g., A and B) whose potential energies U A {\displaystyle U_{A}} U_{A} and U B {\displaystyle U_{B}} U_{B} have different dependences on the spatial coordinates. Because the free energy of a system is not simply a function of the phase space coordinates of the system, but is instead a function of the Boltzmann-weighted integral over phase space (i.e. partition function), the free energy difference between two states cannot be calculated directly. In thermodynamic integration, the free energy difference is calculated by defining a thermodynamic path between the states and integrating over ensemble-averaged enthalpy changes along the path. Such paths can either be real chemical processes or alchemical processes. An example alchemical process is the Kirkwood's coupling parameter method.
 
@@ -120,6 +120,20 @@ optional arguments:
 
 Common md analysis, rmsd, rmsf, SASA, etc.. 
 
+- cg_secondary_structure.tcl
+- check_aa.tcl
+- clean_pdb.tcl
+- count_h-bonded_water_bridges.vmd
+- distances.tcl
+- load_batch.tcl
+- move_2_center_mass.tcl
+- quick_viz.tcl
+- remove_domain.tcl
+- rmsd.tcl
+- sasa.tcl
+- viz_clusters.tcl
+- vmd_script.tcl
+
 # Amber Scripts
 
-Generic Run
+Generic Run configuration to use as a template. 
