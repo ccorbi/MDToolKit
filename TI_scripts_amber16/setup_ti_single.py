@@ -245,8 +245,8 @@ def get_args():
     parser.add_argument("--increment", type=float, default=.1)
     parser.add_argument("--scmask-ignore", type=str,
                         default='CA,C,O,N,HA,H1,H2,H3,H ', dest='scmask_ignore')
-    parser.add_argument("--decouple-mask", type=bool,
-                        default=False, dest='decouple_mask')
+    parser.add_argument("--decouple-mask", 
+                        default=False, dest='decouple_mask', action="store_true")
     parser.add_argument("--psteps", type=int, default=2500000)
     parser.add_argument("--ouput-folder", type=str,
                         default='MUTATION', dest='output_folder')
