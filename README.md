@@ -26,7 +26,7 @@ To use these scripts, simply copy them into a desired directory and add that dir
 
 # Thermodynamic Integrations Scripts
 
-Thermodynamic integration (TI) is a method used to compare the difference in free energy between two given states (e.g., A and B) whose potential energies U A {\displaystyle U_{A}} U_{A} and U B {\displaystyle U_{B}} U_{B} have different dependences on the spatial coordinates. Because the free energy of a system is not simply a function of the phase space coordinates of the system, but is instead a function of the Boltzmann-weighted integral over phase space (i.e. partition function), the free energy difference between two states cannot be calculated directly. In thermodynamic integration, the free energy difference is calculated by defining a thermodynamic path between the states and integrating over ensemble-averaged enthalpy changes along the path. Such paths can either be real chemical processes or alchemical processes. An example alchemical process is the Kirkwood's coupling parameter method.
+Thermodynamic integration (TI) is a method used to compare the difference in free energy between two given states (e.g., A and B) whose potential energies  have different dependences on the spatial coordinates. Because the free energy of a system is not simply a function of the phase space coordinates of the system, but is instead a function of the Boltzmann-weighted integral over phase space (i.e. partition function), the free energy difference between two states cannot be calculated directly. In thermodynamic integration, the free energy difference is calculated by defining a thermodynamic path between the states and integrating over ensemble-averaged enthalpy changes along the path. Such paths can either be real chemical processes or alchemical processes. An example alchemical process is the Kirkwood's coupling parameter method. 
 
 ## Usage
 
@@ -36,7 +36,7 @@ Thermodynamic integration (TI) is a method used to compare the difference in fre
 
 * Scripts Amber 16
 
-Scripts to setup, lunch and analyze TI using Amber 16 or later. There are 2 different protocols, single step and multiple steps. Multiple step protocols run independently for wildtype discharge, vdw+bonded, and mutation recharge.  Three-step is more resource consuming, however, it trend to provide more accurate dG for mutations where a charge is involved. Single topology approach is used for both protocols. These scripts intend to provide a generic solution, under certain circumstances custom tuning must need it. 
+Scripts to setup, lunch and analyze TI using Amber 16 or later. There are 2 different protocols, single step and multiple steps. Multiple step protocols run independently for wildtype discharge, vdw+bonded, and mutation recharge.  Three-step is more resource consuming, however, it trend to provide more accurate dG for mutations where a charge is involved. Single topology using soft core potentials is used for both protocols. These scripts intend to provide a generic solution, under certain circumstances custom tuning must need it. 
 
 setup_ti_single script will write all inputs for amber run a one-step TI, and setup_ti_multiple will do it for three-steps. The only requirements in both scripts are to provide a PDB file with the target, a separate PDB with the ligand, and the mutation. Amber renumber files assigning 1 to the first amino acid in the PDB, please use this numbering to indicate the script the mutation. 
 
