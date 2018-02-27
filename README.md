@@ -29,16 +29,18 @@ To use these scripts, simply copy them into a desired directory and add that dir
 Alchemical free energy calculations provide a means for the accurate determination of free energies from atomistic simulations and are increasingly used as a tool for computational studies of protein-ligand interactions. Thermodynamic integration (TI) is a method used to compare the difference in free energy between two given states (e.g., A and B) whose potential energies  have different dependences on the spatial coordinates. Because the free energy of a system is not simply a function of the phase space coordinates of the system, but is instead a function of the Boltzmann-weighted integral over phase space (i.e. partition function), the free energy difference between two states cannot be calculated directly. In thermodynamic integration, the free energy difference is calculated by defining a thermodynamic path between the states and integrating over ensemble-averaged enthalpy changes along the path. Such paths can either be real chemical processes or alchemical processes.  The "alchemy” term is used  because it involves simulating a transformation of one chemical system to a different one along a nonphysical path to compute the free energy change associated with the transformation.
 
   Jorge, M., Garrido, N., Queimada, A., Economou, I., and Macedo, E. (2010) Effect of the Integration Method on the Accuracy and Computational Efficiency of Free Energy Calculations Using Thermodynamic Integration. J. Chem. Theo. Comp. 6, 1018–1027.
-  
+
   Shyu, C., and Ytreberg, F. M. (2009) Reducing the bias and uncertainty of free energy estimates by using regression to fit thermodynamic integration data. J. Comp. Chem. 30, 2297–230
 
 ## Usage
 
-* Scripts Amber 10
+* **SETUP**
+
+  * *Scripts Amber 10*
 
   **DEPRICATED**. Scripts to setup, lunch and analyse TI  using Amber 12 or earlier.
 
-* Scripts Amber 16
+  * *Scripts Amber 16*
 
 Scripts to setup, lunch and analyze TI using Amber 16 or later. There are 2 different protocols, single step and multiple steps. Multiple step protocols run independently for wildtype discharge, vdw+bonded, and mutation recharge.  Three-step is more resource consuming, however, it trend to provide more accurate dG for mutations where a charge is involved. Single topology using soft core potentials is used for both protocols. These scripts intend to provide a generic solution, under certain circumstances custom tuning must need it. 
 
@@ -77,7 +79,7 @@ optional arguments:
 
 ```
 
-* ANALYSIS
+* **ANALYSIS**
 
 
 Scripts to preprocess Amber TI output. Both scripts will return plots, lambdas averages, and final deltaG. Recommend to skip the first 500 steps (1 ns if integration step is set 2fs) to improve accuracy, however, this may be adjusted for noise trajectories.  
@@ -113,10 +115,12 @@ optional arguments:
 ```
 
 
-* LUNCHERS
+* **LUNCHERS**
 
-- for beagle: submit_beagle.sh
-- for graham submit_graham.sh
+Shell scripts to help to submit jobs in the cluster.
+
+  - Luncher for beagle: submit_beagle.sh
+  - Luncher for graham submit_graham.sh
 
 
 
