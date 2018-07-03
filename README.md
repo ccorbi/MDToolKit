@@ -16,6 +16,7 @@ Collection of scripts to lunch and use analysis of amber Molecular Dynamics.
   - Pandas
   - seaborn
   - scipy
+  - matplotlib
 
 # Installation
 
@@ -38,7 +39,8 @@ Alchemical free energy calculations provide a means for the accurate determinati
 
   * *Scripts Amber 10*
 
-  **DEPRICATED**. Scripts to setup, lunch and analyse TI  using Amber 12 or earlier.
+    **DEPRICATED**. Scripts to setup, lunch and analyse TI  using Amber 12 or earlier.
+
 
   * *Scripts Amber 16*
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # adapt below for each User or enviorment
-amber=/home/ccorbi/amber16
+amber=/usr/local/amber16
 mdrun=${amber}/bin/pmemd.cuda
 
 # by default 10 lambdas

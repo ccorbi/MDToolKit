@@ -28,7 +28,7 @@ Collection of useful VMD scripts
 * Improve clean script, add input selection or options
 
 
-
+```bash
 ############################################################################
 #cr
 #cr            (C) Copyright 1995 The Board of Trustees of the
@@ -378,3 +378,4 @@ lbl	Labels each atom in the 'selectionText' with information 'labelInfo', with
   Hphob_Privalov_dG	---deltaG hydration, J/(mol*A^2), 25 oC
   			(Privalov, P. L. & Khechinashvili, N. N.)
   			}
+```

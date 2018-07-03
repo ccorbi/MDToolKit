@@ -130,7 +130,8 @@ def merge_topologies(folder):
     # create ligand in solution
     Addions ligand NA 0
     Addions ligand CL 0
-
+    Addions ligand NA 6
+    Addions ligand CL 6
     solvateBox ligand TIP3PBOX 12.0
     savepdb ligand ligand.pdb
     saveamberparm ligand ligand.parm7 ligand.rst7
@@ -138,7 +139,8 @@ def merge_topologies(folder):
     # create complex in solution
     Addions complex NA 0
     Addions complex CL 0
-
+    #Addions ligand NA 6
+    #Addions ligand CL 6
     solvateBox complex TIP3PBOX 12.0
     savepdb complex complex.pdb
     saveamberparm complex complex.parm7 complex.rst7

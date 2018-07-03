@@ -187,8 +187,8 @@ def merge_topologies(folder):
     # create ligand in solution
     Addions ligand NA 0
     Addions ligand CL 0
-    #Addions ligand NA 1
-    #Addions ligand CL 1
+    Addions ligand NA 6
+    Addions ligand CL 6
     #solvateOct ligand TIP3PBOX 12.0
     solvateBox ligand TIP3PBOX 12.0
 
@@ -198,8 +198,8 @@ def merge_topologies(folder):
     # create complex in solution
     Addions complex NA 0
     Addions complex CL 0
-    #Addions complex NA 1
-    #Addions complex CL 1
+    #Addions complex NA 6
+    #Addions complex CL 6
     #solvateOct complex TIP3PBOX 12.0
     solvateBox complex TIP3PBOX 12.0
 

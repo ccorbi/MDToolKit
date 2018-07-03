@@ -182,10 +182,19 @@ def calc_ddg(df, STATES, output_file):
         final[state] = sum(i)
 
     print('#'*30)
-    # ΔGcomplex - ΔGligands
-    ddg = final['complex']-final['ligand']
-    print('final ddG binding: \t\t {:.6f}'.format( ddg))
-    print('final ddG binding: \t\t {:.6f}'.format( ddg ), file= delta_file)
+
+    if 'unfolded' in STATES:
+        # ΔGunfolded - ΔGfolded
+        ddg = final['unfolded']-final['folded']
+        print('final ddG stability: \t\t {:.6f}'.format( ddg))
+        print('final ddG stability: \t\t {:.6f}'.format( ddg ), file= delta_file)
+
+    else:
+        # ΔGcomplex - ΔGligands
+        ddg = final['complex']-final['ligand']
+        print('final ddG binding: \t\t {:.6f}'.format( ddg))
+        print('final ddG binding: \t\t {:.6f}'.format( ddg ), file= delta_file)
+
 
     delta_file.close()
     return ddg
@@ -289,12 +298,15 @@ def create_folder(folder):
 def get_args():
     ## todo simplify mutations to X#X
     parser = argparse.ArgumentParser()
+    parser.add_argument("--stbl", default=False, dest='stbl', action='store_true', help='analysis stability output TI' )
     parser.add_argument("--no-extrapolation", dest= "extrapol",default=True, action='store_false', help="by default if lambda 0 or 1 is missing the value is extrapolated. this argument disables this behaibour")
     parser.add_argument("--ignore", nargs='*', help="Ignore a lambda, format ->  step-lambda e.g.. complex-0.100 " )
     parser.add_argument("--skip", type=int, default=0, help='skip # of step to calculate the average on each lambda, 500 or 1ns recommended value, default = 0' )
     parser.add_argument("--limit",  default=None, help='limit on the  # of step to calculate the average dvdl for each lambda, default until the end'  )
     parser.add_argument("--no-plots", default=False, dest='no_plot', action='store_true', help='do not generate plots, only the ddg' )
     parser.add_argument("--no-rms", default=False, dest='no_rms', action='store_true', help='do not generate RMSD  and RMSF data' )
+
+
 
     args = parser.parse_args()
     return args
@@ -303,11 +315,14 @@ def get_args():
 
 if __name__ == '__main__':
 
-    ## CONSTANTS
-    STATES = ['complex', 'ligand']
-
+    
     # get arguments
     args = get_args()
+
+    if args.stbl:
+        STATES = ['unfolded', 'folded']
+    else:
+        STATES = ['complex', 'ligand']
 
     # make folder
     create_folder('./analysis')
