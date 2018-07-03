@@ -295,7 +295,6 @@ def mkdir(folder):
 def get_args():
     # todo simplify mutations to X#X
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ligand", type=str)
     parser.add_argument("--chain", type=str, default='')
     parser.add_argument("--mutation", type=str)
     parser.add_argument("--target", type=str)

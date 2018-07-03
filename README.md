@@ -17,6 +17,7 @@ Collection of scripts to lunch and use analysis of amber Molecular Dynamics.
   - seaborn
   - scipy
   - matplotlib
+  - pytaj
 
 # Installation
 
@@ -42,7 +43,7 @@ Alchemical free energy calculations provide a means for the accurate determinati
     **DEPRICATED**. Scripts to setup, lunch and analyse TI  using Amber 12 or earlier.
 
 
-  * *Scripts Amber 16*
+  * *Scripts Amber 16 Binding*
 
 Scripts to setup, lunch and analyze TI using Amber 16 or later. There are 2 different protocols, single step and multiple steps. Multiple step protocols run independently for wildtype discharge, vdw+bonded, and mutation recharge.  Three-step is more resource consuming, however, it trend to provide more accurate dG for mutations where a charge is involved. Single topology using soft core potentials is used for both protocols. These scripts intend to provide a generic solution, under certain circumstances custom tuning must need it. 
 
@@ -81,6 +82,42 @@ optional arguments:
 
 ```
 
+  * *Scripts Amber 16 Stability*
+
+This protocol is based on this paper (Protein Thermostability Calculations Using Alchemical Free Energy Simulations)[https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2872215/]. The unfolded state of a protein chain is difficult to model, as no single unfolded conformation exists. In previous work , unfolded states have been approximated with short peptides that turned out to produce reasonable results. Instead of using the particular sequence around the amino acid of interest, we chose GXG peptides, where X is the amino acid of interest, with capped termini as a reference state. 
+The protein stability differences ΔΔG were calculated according to ΔGunfolded-ΔGfolded, as shown in the thermodynamic cycle in Fig. 2. Therefore, destabilizing mutations have a negative ΔΔG
+
+
+```bash
+
+setup_ti_single_stability.py --target trg.pdb --mutation PHE20LEU
+
+```
+
+
+```bash
+usage: setup_ti_single_stability.py [-h] [--chain CHAIN] [--mutation MUTATION]
+                                    [--target TARGET] [--increment INCREMENT]
+                                    [--scmask-ignore SCMASK_IGNORE]
+                                    [--decouple-mask] [--psteps PSTEPS]
+                                    [--ouput-folder OUTPUT_FOLDER]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --chain CHAIN
+  --mutation MUTATION
+  --target TARGET
+  --increment INCREMENT
+  --scmask-ignore SCMASK_IGNORE
+  --decouple-mask
+  --psteps PSTEPS
+  --ouput-folder OUTPUT_FOLDER
+
+
+
+
+```
+
 * **ANALYSIS**
 
 
@@ -93,7 +130,7 @@ analysis_multistep.py --skip 500
 analysis_onestep.py --skip 500
 ```
 
-Options are common in both scripts. 
+Options are common in both scripts. Add the flag --stbl if you want to get the ddg from a stability TI.  
 
 
 ```bash
