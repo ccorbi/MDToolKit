@@ -184,3 +184,8 @@ Common md analysis, rmsd, rmsf, SASA, etc..
 # Amber Scripts
 
 Generic Run configuration to use as a template. 
+
+
+# Notes
+
+- Improve mapping, check pmx for inspiration or implementation in our pipeline of their method. https://pubs.acs.org/doi/full/10.1021/acs.jcim.6b00498
